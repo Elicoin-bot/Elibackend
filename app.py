@@ -757,7 +757,6 @@ os.makedirs(ADMISSION_DIR, exist_ok=True)
 for d in ["nin", "birth", "olevel", "passport", "transcript"]:
     os.makedirs(os.path.join(ADMISSION_DIR, d), exist_ok=True)
 
-app.mount("/static", StaticFiles(directory="frontend"), name="static")
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # ================= DATABASE =================
@@ -3207,3 +3206,4 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/static/student-dashboard.html?course_paid=1")
+
