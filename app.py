@@ -2815,7 +2815,7 @@ def admission_pay(
         "tx_ref": f"ADM-{uuid.uuid4()}",
         "amount": str(amount),
         "currency": "NGN",
-        "redirect_url": "http://127.0.0.1:8000/static/admission-form.html",
+        "redirect_url": "http://127.0.0.1:8000/admission-form.html",
         "customer": {
             "email": email,
             "name": full_name,
@@ -3206,4 +3206,5 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/static/student-dashboard.html?course_paid=1")
+
 
