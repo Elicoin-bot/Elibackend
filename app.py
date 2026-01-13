@@ -2725,7 +2725,8 @@ def flutterwave_init(
         "tx_ref": f"ELI-{student.id}-{int(datetime.utcnow().timestamp())}",
         "amount": total_amount,
         "currency": "NGN",
-        "redirect_url": "http://127.0.0.1:8000/api/student/flutterwave/verify",
+        "redirect_url": "https://elinstitute.site/admission-form.html",
+
         "customer": {
             "email": student.email,
             "name": student.full_name,
@@ -3206,5 +3207,6 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/static/student-dashboard.html?course_paid=1")
+
 
 
