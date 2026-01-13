@@ -757,7 +757,9 @@ os.makedirs(ADMISSION_DIR, exist_ok=True)
 for d in ["nin", "birth", "olevel", "passport", "transcript"]:
     os.makedirs(os.path.join(ADMISSION_DIR, d), exist_ok=True)
 
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+app.mount("", StaticFiles(...))
+(app should NOT serve HTML anymore)
+
 
 # ================= DATABASE =================
 Base.metadata.create_all(bind=engine)
@@ -2803,7 +2805,7 @@ def verify_flutterwave_payment(
     }
 
 
-@app.post("/api/admission/pay")
+@app.post("/admission/pay")
 def admission_pay(
     full_name: str = Form(...),
     email: str = Form(...),
@@ -2844,7 +2846,7 @@ def admission_pay(
 
     return {"payment_link": data["data"]["link"]}
 
-@app.get("/api/admission/verify")
+@app.get("/admission/verify")
 def admission_verify(
     tx_ref: str,
     transaction_id: str,
@@ -3207,6 +3209,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/static/student-dashboard.html?course_paid=1")
+
 
 
 
