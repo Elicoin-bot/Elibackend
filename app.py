@@ -1282,7 +1282,7 @@ def admin_search_results(
 
     return results
 
-@app.put("/api/admin/result/{id}")
+@app.put("/admin/result/{id}")
 def admin_update_result(
     id: int,
     ca: int = Form(...),
@@ -1317,7 +1317,7 @@ def admin_update_result(
     }
 
 
-@app.delete("/api/admin/result/{id}")
+@app.delete("/admin/result/{id}")
 def delete_result(
     id: int,
     admin=Depends(require_admin),
@@ -1348,7 +1348,7 @@ from reportlab.lib.units import inch
 from fastapi.responses import FileResponse
 import os
 
-@app.get("/api/student/results/pdf")
+@app.get("/student/results/pdf")
 def student_results_pdf(
     level: int,
     student=Depends(require_student),
@@ -1515,7 +1515,7 @@ def student_results_pdf(
 
 
 
-@app.get("/api/student/results")
+@app.get("/student/results")
 def student_results(student=Depends(require_student), db: Session = Depends(get_db)):
     
     return db.query(Result)\
@@ -1558,7 +1558,7 @@ def student_gpa(
         "cgpa": calc(results)
     }
 
-@app.get("/api/student/payments")
+@app.get("/student/payments")
 def student_payments(student=Depends(require_student), db: Session = Depends(get_db)):
     payments = db.query(PaymentHistory)\
         .filter(PaymentHistory.student_id == student.id)\
@@ -1576,7 +1576,7 @@ def student_payments(student=Depends(require_student), db: Session = Depends(get
         for p in payments
     ]
 
-@app.get("/api/student/receipt/{payment_id}")
+@app.get("/student/receipt/{payment_id}")
 def download_receipt(payment_id: int, student=Depends(require_student), db: Session = Depends(get_db)):
     pay = db.query(PaymentHistory).filter_by(id=payment_id, student_id=student.id).first()
     if not pay:
@@ -1630,7 +1630,7 @@ def download_receipt(payment_id: int, student=Depends(require_student), db: Sess
 
 
 # ================= ANALYTICS =================
-@app.get("/api/admin/analytics/results")
+@app.get("/admin/analytics/results")
 def analytics(admin=Depends(require_admin), db: Session = Depends(get_db)):
     return {
         "total_students": db.query(User).filter(User.role=="student").count(),
@@ -1638,11 +1638,11 @@ def analytics(admin=Depends(require_admin), db: Session = Depends(get_db)):
         "average_score": round(db.query(func.avg(Result.total)).scalar() or 0,2)
     }
 
-@app.get("/api/admin/faculties")
+@app.get("/admin/faculties")
 def get_faculties(admin=Depends(require_admin)):
     return FACULTY_COURSES
 
-@app.get("/api/student/active-semester")
+@app.get("/student/active-semester")
 def student_active_semester(
     student=Depends(require_student),
     db: Session = Depends(get_db)
@@ -1651,7 +1651,7 @@ def student_active_semester(
     return {"semester": semester}
 
 
-@app.get("/api/admin/student")
+@app.get("/admin/student")
 def admin_get_student(
     matric_no: str,
     admin=Depends(require_admin),
@@ -1677,7 +1677,7 @@ def admin_get_student(
     }
 
 
-@app.put("/api/admin/student")
+@app.put("/admin/student")
 def admin_update_student(
     matric_no: str = Form(...),
     full_name: str = Form(...),
@@ -1741,7 +1741,7 @@ def admin_update_student(
         "accessible_weeks": student.accessible_weeks
     }
 
-@app.get("/api/student/course-form")
+@app.get("/student/course-form")
 def course_form(
     semester: str | None = None,
     student=Depends(require_student),
@@ -1844,7 +1844,7 @@ def course_form(
 
 
 
-@app.get("/api/student/course-content/{course_code}")
+@app.get("/student/course-content/{course_code}")
 def get_course_content(
     course_code: str,
     student=Depends(require_student),
@@ -1882,7 +1882,7 @@ def get_course_content(
     }
 
 
-@app.get("/api/student/course-list")
+@app.get("/student/course-list")
 def student_course_list(
     student=Depends(require_student),
     db: Session = Depends(get_db)
@@ -1947,7 +1947,7 @@ def student_course_list(
     }
 
 
-@app.post("/api/admin/course-form/pay")
+@app.post("/admin/course-form/pay")
 def admin_mark_course_form_paid(
     matric_no: str = Form(...),
     semester: str = Form(...),
@@ -1994,7 +1994,7 @@ def admin_mark_course_form_paid(
         "session": session
     }
 
-@app.get("/api/student/course-form/status")
+@app.get("/student/course-form/status")
 def course_form_status(
     student=Depends(require_student),
     db: Session = Depends(get_db)
@@ -2013,7 +2013,7 @@ def course_form_status(
         "semester": semester,
         "session": session
     }
-@app.post("/api/admin/promote-student")
+@app.post("/admin/promote-student")
 def promote_student(
     matric_no: str = Form(...),
     new_level: int = Form(...),
@@ -2061,7 +2061,7 @@ def promote_student(
         "session": session
     }
 
-@app.get("/api/student/transcript")
+@app.get("/student/transcript")
 def download_transcript(
     session: str | None = None,
     level: int | None = None,
@@ -2204,7 +2204,7 @@ def download_transcript(
         filename="academic_transcript.pdf"
     )
     
-@app.get("/api/admin/student/{matric}/course-list")
+@app.get("/admin/student/{matric}/course-list")
 def admin_student_course_list(
     matric: str,
     admin=Depends(require_admin),
@@ -2245,7 +2245,7 @@ def admin_student_course_list(
 
 
 
-@app.post("/api/admin/fix-access")
+@app.post("/admin/fix-access")
 def fix_access(admin=Depends(require_admin), db: Session = Depends(get_db)):
     students = db.query(User).filter(User.role == "student").all()
 
@@ -2256,7 +2256,7 @@ def fix_access(admin=Depends(require_admin), db: Session = Depends(get_db)):
     return {"message": "Access recalculated for all students"}
 
 
-@app.get("/api/student/classroom/{course_code}/{week}")
+@app.get("/student/classroom/{course_code}/{week}")
 def get_classroom(course_code: str, week: int, student=Depends(require_student), db: Session = Depends(get_db)):
     course_code = validate_course_code(course_code)
 
@@ -2331,7 +2331,7 @@ def get_classroom(course_code: str, week: int, student=Depends(require_student),
     "pdf": content.pdf if content else None
 }
 
-@app.get("/api/student/classroom/{course_code}/{week}/chat")
+@app.get("/student/classroom/{course_code}/{week}/chat")
 def get_class_chat(
     course_code: str,
     week: int,
@@ -2357,7 +2357,7 @@ def get_class_chat(
         for m in messages
     ]
  
-@app.post("/api/student/classroom/chat")
+@app.post("/student/classroom/chat")
 def post_chat(data: dict, Authorization: str = Header(...)):
     db = SessionLocal()
 
@@ -2426,7 +2426,7 @@ def post_chat(data: dict, Authorization: str = Header(...)):
     return {"status": "ok"}
 
 
-@app.post("/api/admin/classroom/chat")
+@app.post("/admin/classroom/chat")
 def admin_send_message(
     course: str = Form(...),
     week: int = Form(...),
@@ -2444,7 +2444,7 @@ def admin_send_message(
     db.commit()
     return {"message": "Admin message sent"}
 
-@app.get("/api/admin/classroom/{course_code}/{week}/chat")
+@app.get("/admin/classroom/{course_code}/{week}/chat")
 def admin_get_class_chat(
     course_code: str,
     week: int,
@@ -2466,7 +2466,7 @@ def admin_get_class_chat(
         for m in messages
     ]
 
-@app.post("/api/student/attendance")
+@app.post("/student/attendance")
 def mark_attendance(
     course_code: str = Form(...),
     week: int = Form(...),
@@ -2505,7 +2505,7 @@ def mark_attendance(
 
     return {"message": "Attendance recorded"}
 
-@app.get("/api/admin/attendance")
+@app.get("/admin/attendance")
 def view_attendance(
     course_code: str,
     week: int,
@@ -2525,7 +2525,7 @@ def view_attendance(
     for r in records
 ]
 
-@app.post("/api/admin/course-content")
+@app.post("/admin/course-content")
 def upload_course_content(
     course_code: str = Form(...),
     faculty: str = Form(...),
@@ -2573,7 +2573,7 @@ def upload_course_content(
     return {"message": "Class uploaded successfully"}
 
 
-@app.delete("/api/admin/course-content/{id}")
+@app.delete("/admin/course-content/{id}")
 def delete_course_content(
     id: int,
     db: Session = Depends(get_db),
@@ -2587,7 +2587,7 @@ def delete_course_content(
     db.commit()
     return {"message": "Class deleted"}
 
-@app.post("/api/student/class-replay")
+@app.post("/student/class-replay")
 def track_replay(data: dict, token: str = Header(...)):
     payload = jwt.decode(token.split()[1], SECRET_KEY, algorithms=["HS256"])
 
@@ -2616,7 +2616,7 @@ def track_replay(data: dict, token: str = Header(...)):
     return {"status": "tracked"}
 
 
-@app.get("/api/admin/weekly-classes")
+@app.get("/admin/weekly-classes")
 def get_weekly_classes(
     admin=Depends(require_admin),
     db: Session = Depends(get_db)
@@ -2637,7 +2637,7 @@ def get_weekly_classes(
     ]
 
 
-@app.get("/api/student/classes")
+@app.get("/student/classes")
 def student_available_classes(
     week: int,
     student=Depends(require_student),
@@ -2672,7 +2672,7 @@ def student_available_classes(
 
 
 
-@app.get("/api/student/summary")
+@app.get("/student/summary")
 def student_summary(student=Depends(require_student)):
     total_weeks = TOTAL_SEMESTER_WEEKS
     unlocked = student.accessible_weeks or 0
@@ -2684,7 +2684,7 @@ def student_summary(student=Depends(require_student)):
         "certificate_eligible": unlocked >= total_weeks
     }
 
-@app.post("/api/admin/reset-password")
+@app.post("/admin/reset-password")
 def admin_reset_password(
     matric_no: str = Form(...),
     admin=Depends(require_admin),
@@ -2710,7 +2710,7 @@ def admin_reset_password(
 MIN_PAYMENT = 45000
 TRANSACTION_FEE = 1565
 
-@app.post("/api/student/flutterwave/init")
+@app.post("/student/flutterwave/init")
 def flutterwave_init(
     amount: int = Form(...),
     student=Depends(require_student),
@@ -2756,7 +2756,7 @@ def flutterwave_init(
     # Flutterwave returns payment link
     return {"authorization_url": data["data"]["link"]}
 
-@app.get("/api/student/flutterwave/verify")
+@app.get("/student/flutterwave/verify")
 def verify_flutterwave_payment(
     transaction_id: str,
     db: Session = Depends(get_db)
@@ -2889,7 +2889,7 @@ def admission_verify(
         "tracking_code": tracking
     }
 
-@app.post("/api/admission/submit")
+@app.post("/admission/submit")
 def admission_submit(
     tracking_code: str = Form(...),
     faculty: str = Form(...),
@@ -2941,7 +2941,7 @@ def admission_submit(
 
     return { "message": "OK", "tracking_code": app_rec.tracking_code }
 
-@app.get("/api/admin/admission/list")
+@app.get("/admin/admission/list")
 def admin_admission_list(
     status: str | None = None,
     search: str | None = None,
@@ -2975,7 +2975,7 @@ def admin_admission_list(
         for a in q
     ]
 
-@app.get("/api/admin/admission/view/{app_id}")
+@app.get("/admin/admission/view/{app_id}")
 def admin_view_admission(
     app_id: int,
     admin=Depends(require_admin),
@@ -3009,7 +3009,7 @@ def admin_view_admission(
 
         "created": app.created_at.strftime("%Y-%m-%d %H:%M")
     }
-@app.post("/api/admin/admission/status")
+@app.post("/admin/admission/status")
 def admin_update_admission_status(
     app_id: int = Form(...),
     status: str = Form(...),
@@ -3033,7 +3033,7 @@ def admin_update_admission_status(
         "status": status,
         "tracking_code": app.tracking_code
     }
-@app.get("/api/admission/track")
+@app.get("/admission/track")
 def track(tracking: str, db: Session = Depends(get_db)):
     app_rec = db.query(AdmissionApplication).filter_by(tracking_code=tracking).first()
     if not app_rec:
@@ -3047,7 +3047,7 @@ def track(tracking: str, db: Session = Depends(get_db)):
         "letter": app_rec.offer_letter_url
     }
 
-@app.post("/api/admin/admission/letter")
+@app.post("/admin/admission/letter")
 def admin_upload_letter(
     app_id: int = Form(...),
     file: UploadFile = File(...),
@@ -3091,11 +3091,11 @@ def admin_upload_letter(
         "letter": app_rec.offer_letter_url
     }
 
-@app.get("/api/public/faculties")
+@app.get("/public/faculties")
 def get_public_faculties():
     return list(FACULTY_COURSES.keys())
 
-@app.get("/api/public/courses")
+@app.get("/public/courses")
 def get_public_courses(faculty: str):
     clean = faculty.strip().upper()
 
@@ -3111,7 +3111,7 @@ def get_public_courses(faculty: str):
     return []
 
 
-@app.post("/api/student/courseform/init")
+@app.post("/student/courseform/init")
 def course_form_flutterwave_init(
     student=Depends(require_student),
     db: Session = Depends(get_db)
@@ -3171,7 +3171,7 @@ def course_form_flutterwave_init(
         "authorization_url": data["data"]["link"]
     }
 
-@app.get("/api/student/courseform/verify")
+@app.get("/student/courseform/verify")
 def course_form_flutterwave_verify(
     transaction_id: str,
     db: Session = Depends(get_db)
@@ -3209,6 +3209,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/static/student-dashboard.html?course_paid=1")
+
 
 
 
