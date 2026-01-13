@@ -947,7 +947,7 @@ def course_belongs_to_semester(course_code, course_name, level, semester):
     )
 
 
-@app.post("/api/admin/register")
+@app.post("/admin/register")
 def admin_register_student(
     photo: UploadFile = File(None),
     full_name: str = Form(...),
@@ -1079,7 +1079,7 @@ def student_login(data: StudentLogin, db: Session = Depends(get_db)):
     return {"token": create_token(student.id, "student")}
 
 # ================= SEMESTER =================
-@app.post("/api/admin/set-semester")
+@app.post("/admin/set-semester")
 def set_semester(
     semester: str = Form(...),
     admin=Depends(require_admin),
@@ -1114,7 +1114,7 @@ def get_current_semester(db: Session):
 
 
 
-@app.get("/api/student/me")
+@app.get("/student/me")
 def student_me(
     student=Depends(require_student)
 ):
@@ -1138,7 +1138,7 @@ def student_me(
 
 
 # ================= PAYMENT =================
-@app.post("/api/student/pay")
+@app.post("/student/pay")
 def student_pay(
     amount: int = Form(...),
     student=Depends(require_student),
@@ -3209,6 +3209,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/static/student-dashboard.html?course_paid=1")
+
 
 
 
