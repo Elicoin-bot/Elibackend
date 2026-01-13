@@ -1050,7 +1050,7 @@ class AdminLogin(BaseModel):
     email: str
     password: str
 
-@app.post("/api/token")
+@app.post("/token")
 def admin_login(data: AdminLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(
         User.email == data.email,
@@ -1066,7 +1066,7 @@ class StudentLogin(BaseModel):
     matric_no: str
     password: str
 
-@app.post("/api/student/login")
+@app.post("/student/login")
 def student_login(data: StudentLogin, db: Session = Depends(get_db)):
     student = db.query(User).filter(
         User.matric_no == data.matric_no,
@@ -1170,7 +1170,7 @@ def student_pay(
     }
 
 
-@app.post("/api/admin/update-payment")
+@app.post("/admin/update-payment")
 def admin_update_payment(
     matric_no: str = Form(...),
     amount: int = Form(...),
@@ -1212,7 +1212,7 @@ def admin_update_payment(
 
 
 # ================= RESULTS =================
-@app.post("/api/admin/upload-result")
+@app.post("/admin/upload-result")
 def upload_result(
     matric_no: str = Form(...),
     course: str = Form(...),
@@ -1260,7 +1260,7 @@ def upload_result(
 
 
 
-@app.get("/api/admin/results")
+@app.get("/admin/results")
 def admin_search_results(
     matric_no: str,
     admin=Depends(require_admin),
@@ -3209,6 +3209,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/static/student-dashboard.html?course_paid=1")
+
 
 
 
