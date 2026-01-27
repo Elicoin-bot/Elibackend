@@ -3211,6 +3211,36 @@ def course_form_flutterwave_verify(
     return RedirectResponse("/static/student-dashboard.html?course_paid=1")
 
 
+from fastapi import UploadFile, File, Depends
+from fastapi.responses import JSONResponse
+import uuid, os
+
+UPLOAD_DIR = "uploads/lesson_images"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@app.post("/api/admin/upload-lesson-image")
+async def upload_lesson_image(
+    image: UploadFile = File(...),
+    admin: User = Depends(admin_required)
+):
+    ext = image.filename.split(".")[-1].lower()
+    if ext not in ["png", "jpg", "jpeg", "gif", "webp"]:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Invalid image type"}
+        )
+
+    filename = f"{uuid.uuid4()}.{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+
+    with open(filepath, "wb") as f:
+        f.write(await image.read())
+
+    return {
+        "url": f"/uploads/lesson_images/{filename}"
+    }
+
+
 
 
 
