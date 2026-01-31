@@ -199,7 +199,7 @@ COURSE_REGISTRY = {
 # (Accounting, Banking & Finance, Business Admin, HRM, Economics)
 # ======================================================
 
-"Accounting, Banking & Finance, Business Admin, HRM, Economics": {
+"Accounting, Banking & Finance, Business Administration And Management, HRM, Economics": {
 
     100: {
         "first": [
@@ -382,7 +382,7 @@ COURSE_REGISTRY = {
         ]
     }
 },
-"Business Administration": {
+"Business Administration And Management": {
 
     200: {
         "first": [
@@ -3239,6 +3239,7 @@ async def upload_lesson_image(
     return {
         "url": f"/uploads/lesson_images/{filename}"
     }
+
 
 
 
