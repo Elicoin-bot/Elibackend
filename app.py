@@ -789,7 +789,7 @@ COURSE_ALIASES = {
     "Accounting": "Accounting",
     "Economics": "Economics",
     "Human Resources Management": "Human Resources Management",
-    "Business Administration": "Business Administration",
+    "Business Administration And Management": "Business Administration And Management",
     "Banking and Finance": "Accounting, Banking & Finance, Business Admin, HRM, Economics",
     "International Relations": "International Relations / Political Science",
     "Political Science": "International Relations / Political Science",
@@ -3315,6 +3315,7 @@ async def upload_lesson_image(
     return {
         "url": f"/uploads/lesson_images/{filename}"
     }
+
 
 
 
