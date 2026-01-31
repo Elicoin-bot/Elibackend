@@ -199,9 +199,9 @@ COURSE_REGISTRY = {
 # (Accounting, Banking & Finance, Business Admin, HRM, Economics)
 # ======================================================
 
-"Accounting, Banking & Finance, Business Administration And Management, HRM, Economics": {
 
-    100: {
+"Accounting": {
+     100: {
         "first": [
             {"code": "GNS101", "title": "Use of English", "unit": 2},
             {"code": "GNS103", "title": "Introduction to Philosophy", "unit": 2},
@@ -227,8 +227,6 @@ COURSE_REGISTRY = {
     }
     
 },
-
-"Accounting": {
     200: {
         "first": [
             {"code": "ECN201", "title": "Microeconomics", "unit": 3},
@@ -278,6 +276,32 @@ COURSE_REGISTRY = {
 },
 
 "Economics": {
+     100: {
+        "first": [
+            {"code": "GNS101", "title": "Use of English", "unit": 2},
+            {"code": "GNS103", "title": "Introduction to Philosophy", "unit": 2},
+            {"code": "GNS105", "title": "Basic Study Skills", "unit": 2},
+            {"code": "ECN101", "title": "Introduction to Economics I", "unit": 2},
+            {"code": "BUS104", "title": "Principles of Management", "unit": 3},
+            {"code": "CSC101", "title": "Introduction to Computer Science", "unit": 3},
+            {"code": "BUS103", "title": "Introduction to Marketing", "unit": 3},
+            {"code": "STS107", "title": "Introduction to Statistics", "unit": 2},
+        ],
+        "second": [
+            {"code": "GNS102", "title": "Logic and Reasoning", "unit": 2},
+            {"code": "GNS104", "title": "Politics and Government", "unit": 2},
+            {"code": "GNS106", "title": "Literature in English", "unit": 2},
+            {"code": "MTH104", "title": "Business Mathematics", "unit": 2},
+            {"code": "BUS102", "title": "Introduction to Business Finance", "unit": 3},
+            {"code": "ECO102", "title": "Introduction to Economics II", "unit": 3},
+            {"code": "ACC102", "title": "Introduction to Accounting", "unit": 2},
+            {"code": "BUS104", "title": "Principles of Management", "unit": 3},
+            {"code": "MKT104", "title": "Management and Society", "unit": 3},
+            {"code": "LIS102", "title": "Introduction to Libraries", "unit": 3},
+        ]
+    }
+    
+},
     200: {
         "first": [
             {"code": "ECN201", "title": "Microeconomics", "unit": 3},
@@ -331,6 +355,32 @@ COURSE_REGISTRY = {
     }
 },
 "Human Resources Management": {
+     100: {
+        "first": [
+            {"code": "GNS101", "title": "Use of English", "unit": 2},
+            {"code": "GNS103", "title": "Introduction to Philosophy", "unit": 2},
+            {"code": "GNS105", "title": "Basic Study Skills", "unit": 2},
+            {"code": "ECN101", "title": "Introduction to Economics I", "unit": 2},
+            {"code": "BUS104", "title": "Principles of Management", "unit": 3},
+            {"code": "CSC101", "title": "Introduction to Computer Science", "unit": 3},
+            {"code": "BUS103", "title": "Introduction to Marketing", "unit": 3},
+            {"code": "STS107", "title": "Introduction to Statistics", "unit": 2},
+        ],
+        "second": [
+            {"code": "GNS102", "title": "Logic and Reasoning", "unit": 2},
+            {"code": "GNS104", "title": "Politics and Government", "unit": 2},
+            {"code": "GNS106", "title": "Literature in English", "unit": 2},
+            {"code": "MTH104", "title": "Business Mathematics", "unit": 2},
+            {"code": "BUS102", "title": "Introduction to Business Finance", "unit": 3},
+            {"code": "ECO102", "title": "Introduction to Economics II", "unit": 3},
+            {"code": "ACC102", "title": "Introduction to Accounting", "unit": 2},
+            {"code": "BUS104", "title": "Principles of Management", "unit": 3},
+            {"code": "MKT104", "title": "Management and Society", "unit": 3},
+            {"code": "LIS102", "title": "Introduction to Libraries", "unit": 3},
+        ]
+    }
+    
+},
     200: {
         "first": [
             {"code": "ECN201", "title": "Microeconomics", "unit": 3},
@@ -383,6 +433,32 @@ COURSE_REGISTRY = {
     }
 },
 "Business Administration And Management": {
+     100: {
+        "first": [
+            {"code": "GNS101", "title": "Use of English", "unit": 2},
+            {"code": "GNS103", "title": "Introduction to Philosophy", "unit": 2},
+            {"code": "GNS105", "title": "Basic Study Skills", "unit": 2},
+            {"code": "ECN101", "title": "Introduction to Economics I", "unit": 2},
+            {"code": "BUS104", "title": "Principles of Management", "unit": 3},
+            {"code": "CSC101", "title": "Introduction to Computer Science", "unit": 3},
+            {"code": "BUS103", "title": "Introduction to Marketing", "unit": 3},
+            {"code": "STS107", "title": "Introduction to Statistics", "unit": 2},
+        ],
+        "second": [
+            {"code": "GNS102", "title": "Logic and Reasoning", "unit": 2},
+            {"code": "GNS104", "title": "Politics and Government", "unit": 2},
+            {"code": "GNS106", "title": "Literature in English", "unit": 2},
+            {"code": "MTH104", "title": "Business Mathematics", "unit": 2},
+            {"code": "BUS102", "title": "Introduction to Business Finance", "unit": 3},
+            {"code": "ECO102", "title": "Introduction to Economics II", "unit": 3},
+            {"code": "ACC102", "title": "Introduction to Accounting", "unit": 2},
+            {"code": "BUS104", "title": "Principles of Management", "unit": 3},
+            {"code": "MKT104", "title": "Management and Society", "unit": 3},
+            {"code": "LIS102", "title": "Introduction to Libraries", "unit": 3},
+        ]
+    }
+    
+},
 
     200: {
         "first": [
@@ -3239,6 +3315,7 @@ async def upload_lesson_image(
     return {
         "url": f"/uploads/lesson_images/{filename}"
     }
+
 
 
 
