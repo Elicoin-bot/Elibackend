@@ -69,7 +69,7 @@ FACULTY_COURSES = {
         "Accounting",
         "Banking and Finance",
         "Marketing",
-        "Business Administration and Management",
+        "Business Administration And Management",
         "Human Resources Management",
         "Transport and Logistics Management"
     ],
@@ -96,7 +96,7 @@ COURSES_BY_FACULTY = {
         "Accounting": 12,
         "Banking and Finance": 12,
         "Marketing": 12,
-        "Business Administration and Management": 12,
+        "Business Administration And Management": 12,
         "Human Resources Management": 12,
         "Transport and Logistics Management": 12
     },
@@ -790,7 +790,7 @@ COURSE_ALIASES = {
     "Economics": "Economics",
     "Human Resources Management": "Human Resources Management",
     "Business Administration And Management": "Business Administration And Management",
-    "Banking and Finance": "Accounting, Banking & Finance, Business Admin, HRM, Economics",
+    "Banking and Finance": "Accounting, Banking & Finance, Business Administration And Management, HRM, Economics",
     "International Relations": "International Relations / Political Science",
     "Political Science": "International Relations / Political Science",
 }
@@ -3315,6 +3315,7 @@ async def upload_lesson_image(
     return {
         "url": f"/uploads/lesson_images/{filename}"
     }
+
 
 
 
