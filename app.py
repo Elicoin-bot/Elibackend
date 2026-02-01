@@ -69,7 +69,7 @@ FACULTY_COURSES = {
         "Accounting",
         "Banking and Finance",
         "Marketing",
-        "Business Administration And Management",
+        "Business Administration and Management",
         "Human Resources Management",
         "Transport and Logistics Management"
     ],
@@ -432,7 +432,7 @@ COURSE_REGISTRY = {
         ]
     }
 },
-"Business Administration And Management": {
+"Business Administration": {
      100: {
         "first": [
             {"code": "GNS101", "title": "Use of English", "unit": 2},
@@ -789,8 +789,10 @@ COURSE_ALIASES = {
     "Accounting": "Accounting",
     "Economics": "Economics",
     "Human Resources Management": "Human Resources Management",
-    "Business Administration And Management": "Business Administration And Management",
-    "Banking and Finance": "Accounting, Banking & Finance, Business Administration And Management, HRM, Economics",
+    "Business Administration": "Business Administration",
+    "Business Administration And Management": "Business Administration",
+    "Business Administration and Management": "Business Administration",
+    "Banking and Finance": "Accounting, Banking & Finance, Business Admin, HRM, Economics",
     "International Relations": "International Relations / Political Science",
     "Political Science": "International Relations / Political Science",
 }
@@ -1075,7 +1077,7 @@ def admin_register_student(
         phone=phone,
         gender=gender,
         faculty=faculty,
-        course=course.strip().title(),
+        course=course.strip(),
         level=int(level),
         matric_no=matric_no,
         password_hash=hash_password(temp_password),
