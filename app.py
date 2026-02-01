@@ -69,7 +69,7 @@ FACULTY_COURSES = {
         "Accounting",
         "Banking and Finance",
         "Marketing",
-        "Business Administration and Management",
+        "Business Administration",
         "Human Resources Management",
         "Transport and Logistics Management"
     ],
@@ -96,7 +96,7 @@ COURSES_BY_FACULTY = {
         "Accounting": 12,
         "Banking and Finance": 12,
         "Marketing": 12,
-        "Business Administration And Management": 12,
+        "Business Administration": 12,
         "Human Resources Management": 12,
         "Transport and Logistics Management": 12
     },
@@ -3317,6 +3317,7 @@ async def upload_lesson_image(
     return {
         "url": f"/uploads/lesson_images/{filename}"
     }
+
 
 
 
