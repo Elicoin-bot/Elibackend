@@ -3144,7 +3144,7 @@ def course_form_flutterwave_init(
         "tx_ref": f"COURSEFORM-{cf.id}",
         "amount": 5000,
         "currency": "NGN",
-        "redirect_url": "http://127.0.0.1:8000/api/student/courseform/verify",
+        "redirect_url": "https://api.elinstitute.site/student/courseform/verify",
         "customer": {
             "email": student.email,
             "name": student.full_name,
@@ -3186,12 +3186,12 @@ def course_form_flutterwave_verify(
     data = r.json()
 
     if data.get("status") != "success":
-        return RedirectResponse("/static/student-dashboard.html?course_failed=1")
+        return RedirectResponse("/student-dashboard.html?course_failed=1")
 
     trx = data["data"]
 
     if trx["status"] != "successful":
-        return RedirectResponse("/static/student-dashboard.html?course_failed=1")
+        return RedirectResponse("/student-dashboard.html?course_failed=1")
 
     meta = trx["meta"]
     cf_id = meta["course_form_id"]
@@ -3203,13 +3203,14 @@ def course_form_flutterwave_verify(
     ).first()
 
     if not cf:
-        return RedirectResponse("/static/student-dashboard.html?course_failed=1")
+        return RedirectResponse("/student-dashboard.html?course_failed=1")
 
     # Mark paid
     cf.paid = True
     db.commit()
 
-    return RedirectResponse("/static/student-dashboard.html?course_paid=1")
+    return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
