@@ -2000,16 +2000,24 @@ def course_form_status(
 ):
     semester = get_current_semester(db)
 
-    payment = db.query(CourseFormPayment).filter(
+    payment = (
+    db.query(CourseFormPayment)
+    .filter(
         CourseFormPayment.student_id == student.id,
-        CourseFormPayment.semester == semester,
         CourseFormPayment.paid == True
-    ).first()
+    )
+    .order_by(CourseFormPayment.created_at.desc())
+    .first()
+)
 
+if payment:
     return {
-        "paid": bool(payment),
-        "semester": semester
+        "paid": True,
+        "semester": payment.semester
     }
+
+return { "paid": False }
+
 
 @app.post("/admin/promote-student")
 def promote_student(
@@ -3206,6 +3214,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
