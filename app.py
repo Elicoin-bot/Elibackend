@@ -3124,24 +3124,28 @@ def course_form_flutterwave_init(
 ):
     semester = get_current_semester(db)
 
+    # ✅ Check if already paid
     existing = db.query(CourseFormPayment).filter(
-    CourseFormPayment.student_id == student.id,
-    CourseFormPayment.semester == semester,
-    CourseFormPayment.paid == True
-).first()
+        CourseFormPayment.student_id == student.id,
+        CourseFormPayment.semester == semester,
+        CourseFormPayment.paid == True
+    ).first()
 
-if existing:
-    return {"paid": True, "message": "Already paid"}
+    if existing:
+        return {"paid": True, "message": "Already paid"}
 
-cf = CourseFormPayment(
-    student_id=student.id,
-    semester=semester,
-    amount=5000,
-    paid=False
-)
-db.add(cf)
-db.commit()
+    # ✅ Create pending payment
+    cf = CourseFormPayment(
+        student_id=student.id,
+        semester=semester,
+        amount=5000,
+        paid=False
+    )
+    db.add(cf)
+    db.commit()
+    db.refresh(cf)
 
+    # ✅ Flutterwave init
     url = "https://api.flutterwave.com/v3/payments"
 
     payload = {
@@ -3170,11 +3174,12 @@ db.commit()
 
     if data.get("status") != "success":
         print("FLUTTERWAVE COURSEFORM ERROR:", data)
-        raise HTTPException(400, "Flutterwave course form initialization failed")
+        raise HTTPException(status_code=400, detail="Flutterwave course form initialization failed")
 
     return {
         "authorization_url": data["data"]["link"]
     }
+
 
 @app.get("/student/courseform/verify")
 def course_form_flutterwave_verify(
@@ -3214,6 +3219,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
