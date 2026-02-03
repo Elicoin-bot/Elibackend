@@ -1802,40 +1802,106 @@ def course_form(
         f"{current_session.replace('/', '-')}.pdf"
     )
 
-    doc = SimpleDocTemplate(file_path, pagesize=A4)
-    styles = getSampleStyleSheet()
+doc = SimpleDocTemplate(
+    file_path,
+    pagesize=A4,
+    rightMargin=30,
+    leftMargin=30,
+    topMargin=30,
+    bottomMargin=30
+)
 
-    elements = [
-        Paragraph("<b>ELISHA LENE INSTITUTE</b>", styles["Title"]),
-        Paragraph(f"Name: {student.full_name}", styles["Normal"]),
-        Paragraph(f"Matric No: {student.matric_no}", styles["Normal"]),
-        Paragraph(f"Course: {course_key}", styles["Normal"]),
-        Paragraph(f"Level: {level}", styles["Normal"]),
-        Paragraph(f"Semester: {active_semester.upper()}", styles["Normal"]),
-        Paragraph(f"Session: {current_session}", styles["Normal"]),
-        Paragraph("<br/>", styles["Normal"]),
-    ]
+styles = getSampleStyleSheet()
 
-    table_data = [["Code", "Course Title", "Unit"]]
-    for c in courses:
-        table_data.append([c["code"], c["title"], str(c["unit"])])
+# ===== CUSTOM STYLES =====
+title_style = ParagraphStyle(
+    "SchoolTitle",
+    parent=styles["Title"],
+    alignment=TA_CENTER,
+    textColor=colors.HexColor("#0a6b3c"),  # GREEN
+    fontSize=18,
+    spaceAfter=10
+)
 
-    table = Table(table_data, colWidths=[90, 280, 60])
-    table.setStyle(TableStyle([
-        ("GRID", (0, 0), (-1, -1), 1, colors.black),
-        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-        ("ALIGN", (2, 1), (-1, -1), "CENTER"),
-    ]))
+center_style = ParagraphStyle(
+    "Center",
+    parent=styles["Normal"],
+    alignment=TA_CENTER,
+    spaceAfter=6
+)
 
-    elements.append(table)
-    doc.build(elements)
+normal = styles["Normal"]
 
-    return FileResponse(
-        file_path,
-        media_type="application/pdf",
-        filename="course_form.pdf"
+elements = []
+
+# ===== LOGO =====
+logo_path = "/school-logo.jpeg"
+if os.path.exists(logo_path):
+    logo = Image(logo_path, width=80, height=80)
+    logo.hAlign = "CENTER"
+    elements.append(logo)
+
+# ===== SCHOOL NAME =====
+elements.append(
+    Paragraph("ELISHA LENE INSTITUTE", title_style)
+)
+
+elements.append(Spacer(1, 12))
+
+# ===== STUDENT DETAILS =====
+elements.extend([
+    Paragraph(f"<b>Name:</b> {student.full_name}", normal),
+    Paragraph(f"<b>Matric No:</b> {student.matric_no}", normal),
+    Paragraph(f"<b>Programme:</b> {course_key}", normal),
+    Paragraph(f"<b>Level:</b> {level}", normal),
+    Paragraph(f"<b>Semester:</b> {active_semester.upper()}", normal),
+    Paragraph(f"<b>Session:</b> {current_session}", normal),
+    Spacer(1, 12),
+])
+
+# ===== COURSE TABLE =====
+table_data = [["S/N", "Course Code", "Course Title", "Unit"]]
+
+for idx, c in enumerate(courses, start=1):
+    table_data.append([
+        str(idx),
+        c["code"],
+        c["title"],
+        str(c["unit"])
+    ])
+
+table = Table(
+    table_data,
+    colWidths=[40, 90, 260, 50]
+)
+
+table.setStyle(TableStyle([
+    ("GRID", (0, 0), (-1, -1), 1, colors.black),
+    ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+    ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
+    ("ALIGN", (0, 1), (0, -1), "CENTER"),
+    ("ALIGN", (3, 1), (3, -1), "CENTER"),
+    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ("TOPPADDING", (0, 0), (-1, -1), 6),
+]))
+
+elements.append(table)
+
+elements.append(Spacer(1, 25))
+
+# ===== FOOTER (PAU STYLE) =====
+elements.extend([
+    Paragraph("Student Signature: ____________________________", normal),
+    Spacer(1, 10),
+    Paragraph("Registrar Signature: ____________________________", normal),
+    Spacer(1, 10),
+    Paragraph(
+        f"Date Printed: {datetime.now().strftime('%d %B %Y')}",
+        styles["Italic"]
     )
+])
 
+doc.build(elements)
 
 @app.get("/student/course-content/{course_code}")
 def get_course_content(
@@ -3214,6 +3280,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
