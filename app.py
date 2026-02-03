@@ -1802,7 +1802,7 @@ def course_form(
 
     courses = semesters[active_semester]
 
-    # ================= GENERATE PDF =================
+    # ================= FILE PATH =================
     file_path = (
         f"uploads/course_form_"
         f"{student.matric_no.replace('/', '_')}_"
@@ -1810,6 +1810,7 @@ def course_form(
         f"{current_session.replace('/', '-')}.pdf"
     )
 
+    # ================= PDF SETUP =================
     doc = SimpleDocTemplate(
         file_path,
         pagesize=A4,
@@ -1818,58 +1819,52 @@ def course_form(
         topMargin=30,
         bottomMargin=30
     )
-    
+
     styles = getSampleStyleSheet()
-    
-    # ===== CUSTOM STYLES =====
+
     title_style = ParagraphStyle(
         "SchoolTitle",
         parent=styles["Title"],
         alignment=TA_CENTER,
         textColor=colors.HexColor("#0a6b3c"),  # GREEN
         fontSize=18,
-        spaceAfter=10
+        spaceAfter=12
     )
-    
-    center_style = ParagraphStyle(
-        "Center",
-        parent=styles["Normal"],
-        alignment=TA_CENTER,
-        spaceAfter=6
-    )
-    
+
     normal = styles["Normal"]
-    
+
     elements = []
-    
-    # ===== LOGO =====
-    logo_path = "/school-logo.jpeg"
+
+    # ================= LOGO =================
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(BASE_DIR, "school-logo.jpeg")
+
     if os.path.exists(logo_path):
         logo = Image(logo_path, width=80, height=80)
         logo.hAlign = "CENTER"
         elements.append(logo)
-    
-    # ===== SCHOOL NAME =====
-    elements.append(
-        Paragraph("ELISHA LENE INSTITUTE", title_style)
-    )
-    
-    elements.append(Spacer(1, 12))
-    
-    # ===== STUDENT DETAILS =====
+
+    elements.append(Spacer(1, 10))
+
+    # ================= SCHOOL NAME =================
+    elements.append(Paragraph("ELISHA LENE INSTITUTE", title_style))
+    elements.append(Spacer(1, 10))
+
+    # ================= STUDENT DETAILS =================
     elements.extend([
         Paragraph(f"<b>Name:</b> {student.full_name}", normal),
         Paragraph(f"<b>Matric No:</b> {student.matric_no}", normal),
         Paragraph(f"<b>Programme:</b> {course_key}", normal),
+        Paragraph(f"<b>Faculty:</b> {student.faculty}", normal),
         Paragraph(f"<b>Level:</b> {level}", normal),
         Paragraph(f"<b>Semester:</b> {active_semester.upper()}", normal),
         Paragraph(f"<b>Session:</b> {current_session}", normal),
-        Spacer(1, 12),
+        Spacer(1, 14),
     ])
-    
-    # ===== COURSE TABLE =====
+
+    # ================= COURSE TABLE =================
     table_data = [["S/N", "Course Code", "Course Title", "Unit"]]
-    
+
     for idx, c in enumerate(courses, start=1):
         table_data.append([
             str(idx),
@@ -1877,27 +1872,26 @@ def course_form(
             c["title"],
             str(c["unit"])
         ])
-    
+
     table = Table(
         table_data,
         colWidths=[40, 90, 260, 50]
     )
-    
+
     table.setStyle(TableStyle([
         ("GRID", (0, 0), (-1, -1), 1, colors.black),
         ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
         ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("ALIGN", (0, 1), (0, -1), "CENTER"),
         ("ALIGN", (3, 1), (3, -1), "CENTER"),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
         ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
-    
+
     elements.append(table)
-    
-    elements.append(Spacer(1, 25))
-    
-    # ===== FOOTER (PAU STYLE) =====
+    elements.append(Spacer(1, 30))
+
+    # ================= FOOTER =================
     elements.extend([
         Paragraph("Student Signature: ____________________________", normal),
         Spacer(1, 10),
@@ -1908,8 +1902,16 @@ def course_form(
             styles["Italic"]
         )
     ])
-    
+
+    # ================= BUILD & RETURN =================
     doc.build(elements)
+
+    return FileResponse(
+        path=file_path,
+        media_type="application/pdf",
+        filename=os.path.basename(file_path)
+    )
+
 
 @app.get("/student/course-content/{course_code}")
 def get_course_content(
@@ -3288,6 +3290,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
