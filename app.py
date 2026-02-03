@@ -2,17 +2,11 @@ from fastapi import (
     FastAPI, HTTPException, Depends,
     Header, UploadFile, File, Form
 )
-import os
-from reportlab.lib import colors
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer
-)
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.enums import TA_CENTER
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -29,6 +23,14 @@ from models import AppConfig, SemesterLog
 from models import CourseContent, ClassMessage, ClassReplay, AdmissionApplication
 from models import CourseFormPayment, StudentLevel, Attendance, PaymentHistory 
 from dotenv import load_dotenv
+from reportlab.lib import colors
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer
+)
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
+from datetime import datetime
 
 load_dotenv()
 
@@ -3286,6 +3288,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
