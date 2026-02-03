@@ -2,11 +2,17 @@ from fastapi import (
     FastAPI, HTTPException, Depends,
     Header, UploadFile, File, Form
 )
+import os
+from reportlab.lib import colors
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Table, TableStyle, Image, Spacer
+)
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -1802,106 +1808,106 @@ def course_form(
         f"{current_session.replace('/', '-')}.pdf"
     )
 
-doc = SimpleDocTemplate(
-    file_path,
-    pagesize=A4,
-    rightMargin=30,
-    leftMargin=30,
-    topMargin=30,
-    bottomMargin=30
-)
-
-styles = getSampleStyleSheet()
-
-# ===== CUSTOM STYLES =====
-title_style = ParagraphStyle(
-    "SchoolTitle",
-    parent=styles["Title"],
-    alignment=TA_CENTER,
-    textColor=colors.HexColor("#0a6b3c"),  # GREEN
-    fontSize=18,
-    spaceAfter=10
-)
-
-center_style = ParagraphStyle(
-    "Center",
-    parent=styles["Normal"],
-    alignment=TA_CENTER,
-    spaceAfter=6
-)
-
-normal = styles["Normal"]
-
-elements = []
-
-# ===== LOGO =====
-logo_path = "/school-logo.jpeg"
-if os.path.exists(logo_path):
-    logo = Image(logo_path, width=80, height=80)
-    logo.hAlign = "CENTER"
-    elements.append(logo)
-
-# ===== SCHOOL NAME =====
-elements.append(
-    Paragraph("ELISHA LENE INSTITUTE", title_style)
-)
-
-elements.append(Spacer(1, 12))
-
-# ===== STUDENT DETAILS =====
-elements.extend([
-    Paragraph(f"<b>Name:</b> {student.full_name}", normal),
-    Paragraph(f"<b>Matric No:</b> {student.matric_no}", normal),
-    Paragraph(f"<b>Programme:</b> {course_key}", normal),
-    Paragraph(f"<b>Level:</b> {level}", normal),
-    Paragraph(f"<b>Semester:</b> {active_semester.upper()}", normal),
-    Paragraph(f"<b>Session:</b> {current_session}", normal),
-    Spacer(1, 12),
-])
-
-# ===== COURSE TABLE =====
-table_data = [["S/N", "Course Code", "Course Title", "Unit"]]
-
-for idx, c in enumerate(courses, start=1):
-    table_data.append([
-        str(idx),
-        c["code"],
-        c["title"],
-        str(c["unit"])
-    ])
-
-table = Table(
-    table_data,
-    colWidths=[40, 90, 260, 50]
-)
-
-table.setStyle(TableStyle([
-    ("GRID", (0, 0), (-1, -1), 1, colors.black),
-    ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-    ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
-    ("ALIGN", (0, 1), (0, -1), "CENTER"),
-    ("ALIGN", (3, 1), (3, -1), "CENTER"),
-    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-    ("TOPPADDING", (0, 0), (-1, -1), 6),
-]))
-
-elements.append(table)
-
-elements.append(Spacer(1, 25))
-
-# ===== FOOTER (PAU STYLE) =====
-elements.extend([
-    Paragraph("Student Signature: ____________________________", normal),
-    Spacer(1, 10),
-    Paragraph("Registrar Signature: ____________________________", normal),
-    Spacer(1, 10),
-    Paragraph(
-        f"Date Printed: {datetime.now().strftime('%d %B %Y')}",
-        styles["Italic"]
+    doc = SimpleDocTemplate(
+        file_path,
+        pagesize=A4,
+        rightMargin=30,
+        leftMargin=30,
+        topMargin=30,
+        bottomMargin=30
     )
-])
-
-doc.build(elements)
+    
+    styles = getSampleStyleSheet()
+    
+    # ===== CUSTOM STYLES =====
+    title_style = ParagraphStyle(
+        "SchoolTitle",
+        parent=styles["Title"],
+        alignment=TA_CENTER,
+        textColor=colors.HexColor("#0a6b3c"),  # GREEN
+        fontSize=18,
+        spaceAfter=10
+    )
+    
+    center_style = ParagraphStyle(
+        "Center",
+        parent=styles["Normal"],
+        alignment=TA_CENTER,
+        spaceAfter=6
+    )
+    
+    normal = styles["Normal"]
+    
+    elements = []
+    
+    # ===== LOGO =====
+    logo_path = "/school-logo.jpeg"
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=80, height=80)
+        logo.hAlign = "CENTER"
+        elements.append(logo)
+    
+    # ===== SCHOOL NAME =====
+    elements.append(
+        Paragraph("ELISHA LENE INSTITUTE", title_style)
+    )
+    
+    elements.append(Spacer(1, 12))
+    
+    # ===== STUDENT DETAILS =====
+    elements.extend([
+        Paragraph(f"<b>Name:</b> {student.full_name}", normal),
+        Paragraph(f"<b>Matric No:</b> {student.matric_no}", normal),
+        Paragraph(f"<b>Programme:</b> {course_key}", normal),
+        Paragraph(f"<b>Level:</b> {level}", normal),
+        Paragraph(f"<b>Semester:</b> {active_semester.upper()}", normal),
+        Paragraph(f"<b>Session:</b> {current_session}", normal),
+        Spacer(1, 12),
+    ])
+    
+    # ===== COURSE TABLE =====
+    table_data = [["S/N", "Course Code", "Course Title", "Unit"]]
+    
+    for idx, c in enumerate(courses, start=1):
+        table_data.append([
+            str(idx),
+            c["code"],
+            c["title"],
+            str(c["unit"])
+        ])
+    
+    table = Table(
+        table_data,
+        colWidths=[40, 90, 260, 50]
+    )
+    
+    table.setStyle(TableStyle([
+        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+        ("FONT", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("ALIGN", (0, 1), (0, -1), "CENTER"),
+        ("ALIGN", (3, 1), (3, -1), "CENTER"),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    
+    elements.append(table)
+    
+    elements.append(Spacer(1, 25))
+    
+    # ===== FOOTER (PAU STYLE) =====
+    elements.extend([
+        Paragraph("Student Signature: ____________________________", normal),
+        Spacer(1, 10),
+        Paragraph("Registrar Signature: ____________________________", normal),
+        Spacer(1, 10),
+        Paragraph(
+            f"Date Printed: {datetime.now().strftime('%d %B %Y')}",
+            styles["Italic"]
+        )
+    ])
+    
+    doc.build(elements)
 
 @app.get("/student/course-content/{course_code}")
 def get_course_content(
@@ -3280,6 +3286,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
