@@ -1754,14 +1754,13 @@ def course_form(
 
     # ================= ENFORCE COURSE FORM PAYMENT =================
     payment = db.query(CourseFormPayment).filter(
-    CourseFormPayment.student_id == student.id,
-    CourseFormPayment.semester == active_semester,
-    CourseFormPayment.paid == True
-).first()
+        CourseFormPayment.student_id == student.id,
+        CourseFormPayment.semester == active_semester,
+        CourseFormPayment.paid == True
+    ).first()
 
-if not payment:
-    raise HTTPException(403, "Course form not paid")
-
+    if not payment:
+        raise HTTPException(status_code=403, detail="Course form not paid")
 
     # ================= SAFE COURSE LOOKUP =================
     course_name = COURSE_ALIASES.get(student.course, student.course)
@@ -1772,25 +1771,25 @@ if not payment:
     )
 
     if not course_key:
-        raise HTTPException(400, "Course not configured")
+        raise HTTPException(status_code=400, detail="Course not configured")
 
     levels = COURSE_REGISTRY[course_key]
 
     # ================= LEVEL CHECK =================
     try:
         level = int(student.level)
-    except:
-        raise HTTPException(400, "Invalid student level")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid student level")
 
     if level not in levels:
-        raise HTTPException(400, "Level not configured")
+        raise HTTPException(status_code=400, detail="Level not configured")
 
     semesters = levels[level]
 
     if active_semester not in semesters:
         raise HTTPException(
-            400,
-            f"No courses for {active_semester} semester"
+            status_code=400,
+            detail=f"No courses for {active_semester} semester"
         )
 
     courses = semesters[active_semester]
@@ -1819,11 +1818,7 @@ if not payment:
 
     table_data = [["Code", "Course Title", "Unit"]]
     for c in courses:
-        table_data.append([
-            c["code"],
-            c["title"],
-            str(c["unit"])
-        ])
+        table_data.append([c["code"], c["title"], str(c["unit"])])
 
     table = Table(table_data, colWidths=[90, 280, 60])
     table.setStyle(TableStyle([
@@ -1840,7 +1835,6 @@ if not payment:
         media_type="application/pdf",
         filename="course_form.pdf"
     )
-
 
 
 @app.get("/student/course-content/{course_code}")
@@ -3219,6 +3213,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
