@@ -873,7 +873,8 @@ def require_student(
 ):
     user = get_user_from_token(Authorization, db)
     if not user or user.role != "student":
-        raise HTTPException(401, "Student only")
+    raise HTTPException(status_code=403, detail="Student only")
+
     return user
 
 def grade_score(total):
@@ -1398,7 +1399,12 @@ def student_results_pdf(
 
     # -------- PDF SETUP --------
     filename = f"Academic_Result_L{level}.pdf"
-    path = os.path.join("uploads", filename)
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    
+    path = os.path.join(UPLOAD_DIR, filename)
+
 
     doc = SimpleDocTemplate(path, pagesize=A4)
 
@@ -3293,6 +3299,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
