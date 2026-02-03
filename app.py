@@ -1753,17 +1753,15 @@ def course_form(
     current_session = f"{datetime.now().year}/{datetime.now().year + 1}"
 
     # ================= ENFORCE COURSE FORM PAYMENT =================
-    payment = db.query(CourseFormPayment).filter_by(
-        student_id=student.id,
-        semester=active_semester,
-        session=current_session
-    ).first()
+    payment = db.query(CourseFormPayment).filter(
+    CourseFormPayment.student_id == student.id,
+    CourseFormPayment.semester == active_semester,
+    CourseFormPayment.paid == True
+).first()
 
-    if not payment or not payment.paid:
-        raise HTTPException(
-            403,
-            "Course form not paid for this semester"
-        )
+if not payment:
+    raise HTTPException(403, "Course form not paid")
+
 
     # ================= SAFE COURSE LOOKUP =================
     course_name = COURSE_ALIASES.get(student.course, student.course)
@@ -2001,19 +1999,18 @@ def course_form_status(
     db: Session = Depends(get_db)
 ):
     semester = get_current_semester(db)
-    session = f"{datetime.now().year}/{datetime.now().year + 1}"
 
-    payment = db.query(CourseFormPayment).filter_by(
-        student_id=student.id,
-        semester=semester,
-        session=session
+    payment = db.query(CourseFormPayment).filter(
+        CourseFormPayment.student_id == student.id,
+        CourseFormPayment.semester == semester,
+        CourseFormPayment.paid == True
     ).first()
 
     return {
-        "paid": bool(payment and payment.paid),
-        "semester": semester,
-        "session": session
+        "paid": bool(payment),
+        "semester": semester
     }
+
 @app.post("/admin/promote-student")
 def promote_student(
     matric_no: str = Form(...),
@@ -3119,24 +3116,23 @@ def course_form_flutterwave_init(
 ):
     semester = get_current_semester(db)
 
-    existing = db.query(CourseFormPayment).filter_by(
-        student_id=student.id,
-        semester=semester,
-        paid=True
-    ).first()
+    existing = db.query(CourseFormPayment).filter(
+    CourseFormPayment.student_id == student.id,
+    CourseFormPayment.semester == semester,
+    CourseFormPayment.paid == True
+).first()
 
-    if existing:
-        return {"paid": True, "message": "Already paid"}
+if existing:
+    return {"paid": True, "message": "Already paid"}
 
-    # Create pending entry
-    cf = CourseFormPayment(
-        student_id=student.id,
-        semester=semester,
-        amount=5000,
-        paid=False
-    )
-    db.add(cf)
-    db.commit()
+cf = CourseFormPayment(
+    student_id=student.id,
+    semester=semester,
+    amount=5000,
+    paid=False
+)
+db.add(cf)
+db.commit()
 
     url = "https://api.flutterwave.com/v3/payments"
 
@@ -3210,6 +3206,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
