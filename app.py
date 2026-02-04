@@ -1545,7 +1545,7 @@ def student_results(student=Depends(require_student), db: Session = Depends(get_
 # ================= GPA =================
 GRADE_POINTS = {"A":5,"B":4,"C":3,"D":2,"E":1,"F":0}
 
-@app.get("/api/student/gpa")
+@app.get("/student/gpa")
 def student_gpa(
     student=Depends(require_student),
     db: Session = Depends(get_db)
@@ -3301,6 +3301,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
