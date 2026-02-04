@@ -1444,17 +1444,12 @@ def student_results_pdf(
 
     # -------- LOGO --------
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-    logo_path = os.path.join(BASE_DIR, "school-logo.jpeg")
-
-    print("LOGO ABS PATH:", logo_path)
-
+    logo_path = os.path.join(BASE_DIR, "assets", "school-logo.jpeg")
+    
     if os.path.exists(logo_path):
         logo = Image(logo_path, width=90, height=90)
         logo.hAlign = "CENTER"
         elements.append(logo)
-    else:
-        raise Exception(f"Logo not found at {logo_path}")
 
 
     elements.append(Spacer(1, 10))
@@ -3305,6 +3300,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
