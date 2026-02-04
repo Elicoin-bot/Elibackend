@@ -872,10 +872,12 @@ def require_student(
     db: Session = Depends(get_db)
 ):
     user = get_user_from_token(Authorization, db)
+
     if not user or user.role != "student":
-    raise HTTPException(status_code=403, detail="Student only")
+        raise HTTPException(status_code=403, detail="Student only")
 
     return user
+
 
 def grade_score(total):
     if total >= 70: return "A", "Excellent"
@@ -3299,6 +3301,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
