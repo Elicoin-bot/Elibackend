@@ -766,7 +766,7 @@ ADMISSION_DIR = os.path.join(UPLOAD_DIR, "admission")
 os.makedirs(PHOTO_DIR, exist_ok=True)
 os.makedirs(ADMISSION_DIR, exist_ok=True)
 
-for d in ["nin", "birth", "olevel", "passport", "transcript"]:
+for d in ["nin", "birth", "olevel", "passport", "transcript", "letters"]:
     os.makedirs(os.path.join(ADMISSION_DIR, d), exist_ok=True)
 
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
