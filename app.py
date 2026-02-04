@@ -650,18 +650,22 @@ COURSE_REGISTRY = {
     200: {
         "first": [
             {"code": "NSS201", "title": "Anatomy and Physiology", "unit": 3},
+            {"code": "NSS203", "title": "Developement Psychology", "unit": 3},
+            {"code": "NSS205", "title": "Blood and Fluid", "unit": 2},
+            {"code": "NSS207", "title": "Microbiology/Parasitology", "unit": 2},
             {"code": "NSS211", "title": "Biochemistry", "unit": 2},
             {"code": "NSS213", "title": "Environmental Health", "unit": 2},
+            {"code": "NSS215", "title": "Substance Abuse And Toxiology", "unit": 3},
             {"code": "NSS217", "title": "Medical–Surgical Nursing", "unit": 3},
             {"code": "NSS209", "title": "Public Health", "unit": 3},
         ],
 
         "second": [
-            {"code": "NSS202", "title": "Medical-Surgical Nursing II", "unit": 3},
-            {"code": "NSS208", "title": "Primary Health Care (School Health)", "unit": 3},
+            {"code": "NSS204", "title": "Medical-Surgical Nursing II", "unit": 3},
+            {"code": "NSS206", "title": "Primary Health Care (School Health)", "unit": 3},
             {"code": "NSS210", "title": "Nursing Ethics & Jurisprudence", "unit": 3},
-            {"code": "NSS212", "title": "Health Programme Planning", "unit": 3},
-            {"code": "NSS214", "title": "Occupational Health", "unit": 3},
+            {"code": "NSS212", "title": "Health Programme Planning and Evaluation", "unit": 3},
+            {"code": "NSS208", "title": "Occupational Health", "unit": 3},
             {"code": "NSS216", "title": "Introduction to Pharmacology", "unit": 3},
             {"code": "NSS218", "title": "Human Behaviour in Health & Disease", "unit": 3},
         ]
@@ -3300,6 +3304,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
