@@ -1527,10 +1527,14 @@ def student_results_pdf(
     doc.build(elements)
 
     return FileResponse(
-        path,
-        media_type="application/pdf",
-        filename="Academic_Result.pdf"
+    path,
+    media_type="application/pdf",
+    filename=f"Academic_Result_Level_{level}.pdf",
+    headers={
+        "Content-Disposition": f'attachment; filename="Academic_Result_Level_{level}.pdf"'
+    }
     )
+
 
 
 
@@ -3301,6 +3305,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
