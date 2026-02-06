@@ -2818,7 +2818,7 @@ def flutterwave_init(
         "tx_ref": f"ELI-{student.id}-{int(datetime.utcnow().timestamp())}",
         "amount": total_amount,
         "currency": "NGN",
-        "redirect_url": "https://elinstitute.site/admission-form.html",
+        "redirect_url": "https://elinstitute.site/payment-success.html",
 
         "customer": {
             "email": student.email,
@@ -2852,6 +2852,14 @@ def verify_flutterwave_payment(
     transaction_id: str,
     db: Session = Depends(get_db)
 ):
+    # 🔒 prevent duplicate verification
+    existing = db.query(PaymentHistory).filter(
+        PaymentHistory.reference == transaction_id
+    ).first()
+
+    if existing:
+        return {"message": "Payment already verified"}
+
     url = f"https://api.flutterwave.com/v3/transactions/{transaction_id}/verify"
     headers = {"Authorization": f"Bearer {FLW_SECRET_KEY}"}
 
@@ -2866,26 +2874,30 @@ def verify_flutterwave_payment(
     if trx["status"] != "successful":
         raise HTTPException(400, "Transaction unsuccessful")
 
-    meta = trx["meta"]
-    student_id = meta["student_id"]
-    school_amount = meta["school_amount"]
+    meta = trx.get("meta", {})
+    student_id = meta.get("student_id")
+    school_amount = meta.get("school_amount")
+
+    if not student_id or not school_amount:
+        raise HTTPException(400, "Invalid transaction metadata")
 
     student = db.query(User).get(student_id)
-
     if not student:
         raise HTTPException(404, "Student not found")
 
-    # update school fees
-    student.fees_paid += school_amount
-    recalculate_access(student, db)
-    db.commit()
+    # ✅ update fees
+    student.fees_paid = (student.fees_paid or 0) + school_amount
 
-    db.add(PaymentHistory(
+    recalculate_access(student, db)
+
+    payment = PaymentHistory(
         student_id=student.id,
         amount=school_amount,
         method="flutterwave",
         reference=transaction_id,
-    ))
+    )
+
+    db.add(payment)
     db.commit()
 
     return {
@@ -3304,6 +3316,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
