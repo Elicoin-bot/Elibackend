@@ -90,6 +90,13 @@ FACULTY_COURSES = {
         "Mass Communication",
         "International Relations and Diplomacy"
     ],
+    "POSTGRADUATE PROGRAMMES": [
+            "Master of Business Administration (MBA)",
+            "MSc Project Management",
+            "MSc Human Resource Management",
+            "M.Ed Educational Management",
+            "MSc Information Technology"
+    ],
     "FACULTY OF ENGINEERING": [
         "Computer Engineering"
     ]
@@ -116,6 +123,13 @@ COURSES_BY_FACULTY = {
     "FACULTY OF ART AND HUMANITIES": {
         "Mass Communication": 12,
         "International Relations and Diplomacy": 12
+    },
+    "POSTGRADUATE PROGRAMMES": {
+            "Master of Business Administration (MBA)": 14,
+            "MSc Project Management": 14,
+            "MSc Human Resource Management": 14,
+            "M.Ed Educational Management": 14,
+            "MSc Information Technology": 14
     },
     "FACULTY OF ENGINEERING": {
         "Computer Engineering": 12
@@ -3316,6 +3330,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
