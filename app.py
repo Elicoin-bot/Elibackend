@@ -2463,72 +2463,52 @@ def get_class_chat(
     ]
  
 @app.post("/student/classroom/chat")
-def post_chat(data: dict, Authorization: str = Header(...)):
-    db = SessionLocal()
+def post_chat(
+    course: str = Form(...),
+    week: int = Form(...),
+    message: str = Form(""),
+    file: UploadFile = File(None),
+    student=Depends(require_student),
+    db: Session = Depends(get_db)
+):
 
-    payload = jwt.decode(
-        Authorization.split()[1],
-        SECRET_KEY,
-        algorithms=["HS256"]
-    )
-
-    student = db.query(User).get(int(payload["sub"]))
-    student_name = student.full_name
-
-    course = data["course"]
-    week = data["week"]
-    message = data["message"]
+    # 🔐 ACCESS CHECK
+    if week > (student.accessible_weeks or 0):
+        raise HTTPException(403, "Class locked")
 
     # Save student message
     db.add(ClassMessage(
         course_code=course,
         week=week,
         sender_role="student",
-        sender_name=student_name,
+        sender_name=student.full_name,
         message=message
     ))
     db.commit()
 
-        # 🔐 verify student is allowed this course
-    allowed = db.query(CourseContent).filter_by(
-        course_code=course,
-        week=week
-    ).first()
-
-    if not allowed:
-        db.close()
-        raise HTTPException(403, "Invalid class")
-
-
-    # AI reply
+    # ===== AI REPLY =====
     lesson = db.query(CourseContent).filter_by(
         course_code=course,
         week=week
     ).first()
 
-    try:
-        ai_reply = ai_tutor_reply(
-            message,
-            course,
-            lesson.content if lesson else ""
-        )
-    except Exception as e:
-        ai_reply = (
-            "⚠️ PROF. ALEX is temporarily unavailable. "
-            "Your message has been recorded."
-        )
-
+    ai_reply = ai_tutor_reply(
+        message,
+        course,
+        lesson.content if lesson else ""
+    )
 
     db.add(ClassMessage(
         course_code=course,
         week=week,
         sender_role="ai",
-        sender_name="PROF. ALEX ELI",
+        sender_name="Prof Alex Eli",
         message=ai_reply
     ))
     db.commit()
-    db.close()
+
     return {"status": "ok"}
+
 
 
 @app.post("/admin/classroom/chat")
@@ -3330,6 +3310,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
