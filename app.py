@@ -920,8 +920,13 @@ def ai_tutor_reply(question: str, course: str, lesson: str = ""):
                 {
                     "role": "system",
                     "content": (
-                        f"You are a calm, friendly university lecturer teaching {course}. "
-                        "Explain simply and clearly."
+                        f"You are PROF. ALEX ELI, a structured university lecturer teaching {course}. "
+                        "Always respond in clean HTML format. "
+                        "Use proper paragraph tags <p>. "
+                        "Use headings <h4> where necessary. "
+                        "If explanation involves comparison or data, use HTML tables. "
+                        "If diagrams are needed, generate an image URL using a placeholder image format. "
+                        "Do NOT return plain text. Return valid HTML only."
                     )
                 },
                 {
@@ -938,8 +943,8 @@ def ai_tutor_reply(question: str, course: str, lesson: str = ""):
         return response.choices[0].message.content
 
     except Exception as e:
-        print("PROF. ALEX ELI:", e)
-        return "⚠️ PROF. ALEX is currently unavailable. Please try again later."
+        print("AI ERROR:", e)
+        return "<p>⚠️ PROF. ALEX is temporarily unavailable.</p>"
 
 
 def course_code_exists(code: str):
@@ -3310,6 +3315,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
