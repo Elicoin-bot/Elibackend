@@ -2,8 +2,24 @@ from fastapi import (
     FastAPI, HTTPException, Depends,
     Header, UploadFile, File, Form
 )
+
+
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://elinstitute.site",
+        "https://www.elinstitute.site"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 from fastapi.staticfiles import StaticFiles
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -43,6 +59,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 import os, uuid, shutil
 
 import requests
+
 
 
 
@@ -3315,6 +3332,7 @@ def course_form_flutterwave_verify(
     db.commit()
 
     return RedirectResponse("/student-dashboard.html?course_paid=1")
+
 
 
 
