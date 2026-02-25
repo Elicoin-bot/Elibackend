@@ -2724,7 +2724,7 @@ def admin_get_class_chat(
         for m in messages
     ]
 
-@app.get("/admin/student-attendance/{matric_no}")
+@app.get("/admin/student-attendance/{matric:path}")
 def admin_student_attendance(
     matric_no: str,
     admin=Depends(require_admin),
@@ -3674,6 +3674,7 @@ def add_note(
     ))
     db.commit()
     return {"message": "Note added"}
+
 
 
 
