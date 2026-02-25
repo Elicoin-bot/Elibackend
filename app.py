@@ -47,7 +47,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
 from datetime import datetime
-
+from models import Assignment, AssignmentSubmission, LecturerNote
 load_dotenv()
 
 
@@ -830,6 +830,53 @@ MIN_PAYMENT = 45000
 TRANSACTION_FEE = 1500
 FIRST_SEMESTER_FULL_PERCENT = 70
 
+
+def require_lecturer(
+    Authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    user = get_user_from_token(Authorization, db)
+    if not user or user.role not in ["admin", "lecturer"]:
+        raise HTTPException(403, "Lecturer only")
+    return user 
+    
+def recalculate_course_ca(student_id: int, course_code: str, db: Session):
+
+    # -------- ASSIGNMENT CA (20 marks total) --------
+    submissions = (
+        db.query(AssignmentSubmission)
+        .join(Assignment, Assignment.id == AssignmentSubmission.assignment_id)
+        .filter(
+            Assignment.course_code == course_code,
+            AssignmentSubmission.student_id == student_id,
+            AssignmentSubmission.graded == True
+        )
+        .all()
+    )
+
+    total_obtained = sum(s.score for s in submissions)
+    total_possible = sum(
+        db.query(Assignment).get(s.assignment_id).max_score
+        for s in submissions
+    )
+
+    assignment_ca = 0
+    if total_possible > 0:
+        assignment_ca = (total_obtained / total_possible) * 20
+
+
+    # -------- ATTENDANCE CA (20 marks total) --------
+    attended = db.query(Attendance).filter(
+        Attendance.student_id == student_id,
+        Attendance.course_code == course_code,
+        Attendance.status == "present"
+    ).count()
+    attendance_ca = (attended / TOTAL_SEMESTER_WEEKS) * 20
+
+    total_ca = round(assignment_ca + attendance_ca, 2)
+
+    return total_ca
+    
 def recalculate_access(student, db):
     if student.fees_total <= 0:
         student.access_percentage = 0
@@ -913,7 +960,29 @@ def require_student(
 
     return user
 
+def ai_grade_assignment(answer: str, max_score: int):
+    if not answer.strip():
+        return 0
 
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": f"You are grading an academic assignment strictly out of {max_score}. Return only a number."
+                },
+                {"role": "user", "content": answer}
+            ],
+            temperature=0.2
+        )
+
+        score = int(response.choices[0].message.content.strip())
+        return max(0, min(score, max_score))
+
+    except:
+        return 0
+    
 def grade_score(total):
     if total >= 70: return "A", "Excellent"
     if total >= 60: return "B", "Very Good"
@@ -2384,10 +2453,13 @@ def fix_access(admin=Depends(require_admin), db: Session = Depends(get_db)):
 
 
 @app.get("/student/classroom/{course_code}/{week}")
-def get_classroom(course_code: str, week: int, student=Depends(require_student), db: Session = Depends(get_db)):
+def get_classroom(
+    course_code: str,
+    week: int,
+    student=Depends(require_student),
+    db: Session = Depends(get_db)
+):
     course_code = validate_course_code(course_code)
-
-
 
     # ---------- VALIDATE WEEK ----------
     if week < 1 or week > TOTAL_SEMESTER_WEEKS:
@@ -2403,8 +2475,7 @@ def get_classroom(course_code: str, week: int, student=Depends(require_student),
         week=week
     ).first()
 
-
-        # 🔐 ENSURE COURSE BELONGS TO STUDENT
+    # ---------- ENSURE COURSE BELONGS TO STUDENT ----------
     raw_course = student.course.strip()
     course_name = COURSE_ALIASES.get(raw_course, raw_course)
 
@@ -2425,9 +2496,10 @@ def get_classroom(course_code: str, week: int, student=Depends(require_student),
     if course_code.upper() not in allowed_codes:
         raise HTTPException(403, "Course not assigned to you")
 
+    # ======================================================
+    # 🟢 AUTO ATTENDANCE (24-HOUR STRICT RULE)
+    # ======================================================
 
-    # 🟢 AUTO MARK ATTENDANCE
-    semester = get_current_semester(db)
     session = f"{datetime.now().year}/{datetime.now().year + 1}"
 
     already = db.query(Attendance).filter_by(
@@ -2438,26 +2510,103 @@ def get_classroom(course_code: str, week: int, student=Depends(require_student),
         session=session
     ).first()
 
-    if not already:
-        db.add(Attendance(
-            student_id=student.id,
-            course_code=course_code,
-            week=week,
-            semester=semester,
-            session=session
-        ))
+# ---------------- AUTO ATTENDANCE ----------------
+    if not already and content:
+    
+        release_time = content.created_at
+        now = datetime.utcnow()
+    
+        if release_time:
+    
+            if now <= release_time + timedelta(hours=24):
+                # PRESENT
+                db.add(Attendance(
+                    student_id=student.id,
+                    course_code=course_code,
+                    week=week,
+                    semester=semester,
+                    session=session,
+                    status="present"
+                ))
+            else:
+                # ABSENT (0 mark)
+                db.add(Attendance(
+                    student_id=student.id,
+                    course_code=course_code,
+                    week=week,
+                    semester=semester,
+                    session=session,
+                    status="absent"
+                ))
+    
+            db.commit()
+    # ======================================================
+    # 🔵 RECALCULATE CA (ASSIGNMENT 20 + ATTENDANCE 20)
+    # ======================================================
+
+    total_ca = recalculate_course_ca(student.id, course_code, db)
+
+    result = db.query(Result).filter_by(
+        student_id=student.id,
+        course=course_code
+    ).first()
+
+    if result:
+        result.ca_score = total_ca
+        result.total = total_ca + (result.exam_score or 0)
+        grade, remark = grade_score(result.total)
+        result.grade = grade
+        result.remark = remark
         db.commit()
 
+    # ======================================================
+    # 🔵 LOAD ASSIGNMENT
+    # ======================================================
+
+    assignment = db.query(Assignment).filter_by(
+        course_code=course_code,
+        week=week
+    ).first()
+
+    assignment_data = None
+    if assignment:
+        assignment_data = {
+            "instructions": assignment.instructions,
+            "due_date": assignment.due_date.strftime("%Y-%m-%d %H:%M")
+        }
+
+    # ======================================================
+    # 🔵 LOAD LECTURER NOTES
+    # ======================================================
+
+    notes = db.query(LecturerNote).filter_by(
+        course_code=course_code,
+        week=week
+    ).all()
+
+    notes_data = [
+        {
+            "note": n.note,
+            "created_by": n.created_by,
+            "time": n.created_at.strftime("%Y-%m-%d %H:%M")
+        }
+        for n in notes
+    ]
+
+    # ======================================================
+    # 🔵 FINAL RESPONSE
+    # ======================================================
 
     return {
-    "course": course_code,
-    "week": week,
-    "title": content.title if content else f"Week {week}",
-    "content": content.content if content else "No lesson yet",
-    "audio": content.audio if content else None,
-    "pdf": content.pdf if content else None
-}
-
+        "course": course_code,
+        "week": week,
+        "title": content.title if content else f"Week {week}",
+        "content": content.content if content else "No lesson yet",
+        "audio": content.audio if content else None,
+        "pdf": content.pdf if content else None,
+        "assignment": assignment_data,
+        "lecturer_notes": notes_data
+    }
 @app.get("/student/classroom/{course_code}/{week}/chat")
 def get_class_chat(
     course_code: str,
@@ -2573,45 +2722,98 @@ def admin_get_class_chat(
         for m in messages
     ]
 
-@app.post("/student/attendance")
-def mark_attendance(
-    course_code: str = Form(...),
-    week: int = Form(...),
-    student=Depends(require_student),
+@app.get("/admin/student-attendance/{matric_no}")
+def admin_student_attendance(
+    matric_no: str,
+    admin=Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    # 🔒 WEEK ACCESS CHECK
-    if week > (student.accessible_weeks or 0):
-        raise HTTPException(403, "Week locked")
-
-    semester = get_current_semester(db)
-    session = f"{datetime.now().year}/{datetime.now().year + 1}"
-
-    # ❌ Prevent duplicate attendance
-    exists = db.query(Attendance).filter_by(
-        student_id=student.id,
-        course_code=course_code,
-        week=week,
-        semester=semester,
-        session=session
+    student = db.query(User).filter(
+        User.matric_no == matric_no.strip().upper(),
+        User.role == "student"
     ).first()
 
-    if exists:
-        return {"message": "Already marked present"}
+    if not student:
+        raise HTTPException(404, "Student not found")
 
-    record = Attendance(
-        student_id=student.id,
-        course_code=course_code,
-        week=week,
-        semester=semester,
-        session=session
-    )
+    semester = get_current_semester(db)
 
-    db.add(record)
-    db.commit()
+    records = db.query(Attendance).filter(
+        Attendance.student_id == student.id,
+        Attendance.semester == semester
+    ).all()
 
-    return {"message": "Attendance recorded"}
+    attendance_data = {}
 
+    for r in records:
+        if r.course_code not in attendance_data:
+            attendance_data[r.course_code] = {
+                "first_attended_at": None,
+                "present": 0,
+                "absent": 0
+            }
+
+        if r.status == "present":
+            attendance_data[r.course_code]["present"] += 1
+
+            if not attendance_data[r.course_code]["first_attended_at"]:
+                attendance_data[r.course_code]["first_attended_at"] = r.attended_at.strftime("%Y-%m-%d %H:%M")
+
+        if r.status == "absent":
+            attendance_data[r.course_code]["absent"] += 1
+
+    return {
+        "student": student.full_name,
+        "matric_no": student.matric_no,
+        "semester": semester,
+        "courses": attendance_data
+    }
+    
+@app.get("/admin/course-attendance")
+def admin_course_attendance(
+    course_code: str,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    semester = get_current_semester(db)
+
+    students = db.query(User).filter(User.role == "student").all()
+
+    response = []
+
+    for s in students:
+
+        first_attendance = db.query(Attendance).filter(
+            Attendance.student_id == s.id,
+            Attendance.course_code == course_code,
+            Attendance.status == "present",
+            Attendance.semester == semester
+        ).order_by(Attendance.attended_at.asc()).first()
+
+        total_present = db.query(Attendance).filter(
+            Attendance.student_id == s.id,
+            Attendance.course_code == course_code,
+            Attendance.status == "present",
+            Attendance.semester == semester
+        ).count()
+
+        total_absent = db.query(Attendance).filter(
+            Attendance.student_id == s.id,
+            Attendance.course_code == course_code,
+            Attendance.status == "absent",
+            Attendance.semester == semester
+        ).count()
+
+        response.append({
+            "name": s.full_name,
+            "matric_no": s.matric_no,
+            "first_attended_at": first_attendance.attended_at.strftime("%Y-%m-%d %H:%M")
+                if first_attendance else None,
+            "total_present": total_present,
+            "total_absent": total_absent
+        })
+
+    return response
 @app.get("/admin/attendance")
 def view_attendance(
     course_code: str,
@@ -3335,22 +3537,141 @@ def course_form_flutterwave_verify(
 
 
 
+@app.post("/admin/assignment")
+def create_assignment(
+    course_code: str = Form(...),
+    week: int = Form(...),
+    due_date: str = Form(...),
+    instructions: str = Form(""),
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    due = datetime.fromisoformat(due_date)
+
+    assignment = Assignment(
+        course_code=course_code,
+        faculty=admin.faculty,
+        level=admin.level,
+        semester="current",
+        week=week,
+        title=f"Week {week} Assignment",
+        instructions=instructions,
+        due_date=due,
+        created_by=admin.full_name
+    )
+
+    db.add(assignment)
+    db.commit()
+
+    return {"message": "Assignment uploaded"}
 
 
 
 
 
+@app.post("/student/submit-assignment")
+def submit_assignment(
+    course: str = Form(...),
+    week: int = Form(...),
+    text: str = Form(""),
+    file: UploadFile = File(None),
+    student=Depends(require_student),
+    db: Session = Depends(get_db)
+):
+
+    assignment = db.query(Assignment).filter_by(
+        course_code=course,
+        week=week
+    ).first()
+
+    if not assignment:
+        raise HTTPException(404, "Assignment not found")
+
+    if datetime.utcnow() > assignment.due_date:
+        raise HTTPException(403, "Assignment expired")
+
+    file_path = None
+
+    if file:
+        upload_dir = "uploads/assignments"
+        os.makedirs(upload_dir, exist_ok=True)
+
+        file_path = f"{upload_dir}/{student.id}_{file.filename}"
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+    submission = AssignmentSubmission(
+        assignment_id=assignment.id,
+        student_id=student.id,
+        submission_text=text,
+        submission_file=file_path
+    )
+
+    db.add(submission)
+    db.commit()
+
+    # AI grading
+    score = ai_grade_assignment(text or "", assignment.max_score)
+
+    submission.score = score
+    submission.graded = True
+
+    # Update CA
+    result = db.query(Result).filter_by(
+        student_id=student.id,
+        course=course
+    ).first()
+
+    if result:
+        total_ca = recalculate_course_ca(student.id, course, db)
+    
+        result = db.query(Result).filter_by(
+            student_id=student.id,
+            course=course
+        ).first()
+        
+        if result:
+            result.ca_score = total_ca
+            result.total = total_ca + (result.exam_score or 0)
+            grade, remark = grade_score(result.total)
+            result.grade = grade
+            result.remark = remark
+        else:
+            result = Result(
+                student_id=student.id,
+                course=course,
+                ca_score=total_ca,
+                exam_score=0,
+                total=total_ca,
+                grade="",
+                remark="",
+                semester=get_current_semester(db),
+                level=student.level,
+                session=str(datetime.now().year)
+            )
+            db.add(result)
+        
+        db.commit()
+
+    return {"message": f"Assignment submitted. Score: {score}"}
 
 
-
-
-
-
-
-
-
-
-
+@app.post("/lecturer/note")
+def add_note(
+    course: str = Form(...),
+    week: int = Form(...),
+    note: str = Form(...),
+    lecturer=Depends(require_lecturer),
+    db: Session = Depends(get_db)
+):
+    db.add(LecturerNote(
+        course_code=course,
+        week=week,
+        note=note,
+        created_by=lecturer.full_name
+    ))
+    db.commit()
+    return {"message": "Note added"}
 
 
 
