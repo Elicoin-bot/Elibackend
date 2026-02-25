@@ -7,19 +7,21 @@ from fastapi import (
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-
 app = FastAPI()
+
+origins = [
+    "https://elinstitute.site",
+    "https://www.elinstitute.site"
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://elinstitute.site",
-        "https://www.elinstitute.site"
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 from fastapi.staticfiles import StaticFiles
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -3672,6 +3674,7 @@ def add_note(
     ))
     db.commit()
     return {"message": "Note added"}
+
 
 
 
