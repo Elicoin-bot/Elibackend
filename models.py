@@ -138,7 +138,9 @@ class Attendance(Base):
     week = Column(Integer)
     semester = Column(String)
     session = Column(String)
+    status = Column(String, default="present")  # NEW
     attended_at = Column(DateTime, default=datetime.utcnow)
+
 
 class ClassReplay(Base):
     __tablename__ = "class_replay"
@@ -215,3 +217,57 @@ class StudentLevel(Base):
     old_level = Column(Integer)
     new_level = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+# ================= ASSIGNMENTS =================
+
+class Assignment(Base):
+    __tablename__ = "assignments"
+
+    id = Column(Integer, primary_key=True)
+    course_code = Column(String, index=True)
+    faculty = Column(String)
+    level = Column(Integer)
+    semester = Column(String)
+    week = Column(Integer)
+
+    title = Column(String)
+    instructions = Column(Text)
+
+    max_score = Column(Integer, default=40)
+    due_date = Column(DateTime)
+
+    created_by = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AssignmentSubmission(Base):
+    __tablename__ = "assignment_submissions"
+
+    id = Column(Integer, primary_key=True)
+    assignment_id = Column(Integer, ForeignKey("assignments.id"))
+    student_id = Column(Integer, ForeignKey("users.id"))
+
+    submission_text = Column(Text, nullable=True)
+    submission_file = Column(String, nullable=True)
+
+    score = Column(Integer, nullable=True)
+    graded = Column(Boolean, default=False)
+
+    submitted_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ================= LECTURER NOTES =================
+
+class LecturerNote(Base):
+    __tablename__ = "lecturer_notes"
+
+    id = Column(Integer, primary_key=True)
+    course_code = Column(String, index=True)
+    week = Column(Integer)
+
+    note = Column(Text)
+
+    created_by = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
