@@ -2726,12 +2726,14 @@ def admin_get_class_chat(
 
 @app.get("/admin/student-attendance/{matric:path}")
 def admin_student_attendance(
-    matric_no: str,
+    matric: str,
     admin=Depends(require_admin),
     db: Session = Depends(get_db)
 ):
+    matric = matric.strip().upper()
+
     student = db.query(User).filter(
-        User.matric_no == matric_no.strip().upper(),
+        User.matric_no == matric,
         User.role == "student"
     ).first()
 
@@ -3674,6 +3676,7 @@ def add_note(
     ))
     db.commit()
     return {"message": "Note added"}
+
 
 
 
