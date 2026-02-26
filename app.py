@@ -3707,17 +3707,19 @@ def add_note(
     db.commit()
     return {"message": "Note added"}
 
+from fastapi import Form
+
 @app.post("/admin/verify-courseform")
 def admin_verify_courseform(
-    matric: str = Form(...),
+    matric_no: str = Form(...),
     semester: str = Form(...),
     admin=Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    matric = matric.strip().upper()
+    matric_no = matric_no.strip().upper()
 
     student = db.query(User).filter(
-        User.matric_no == matric,
+        User.matric_no == matric_no,
         User.role == "student"
     ).first()
 
@@ -3730,44 +3732,16 @@ def admin_verify_courseform(
     ).first()
 
     if not cf:
-        raise HTTPException(404, "Course form record not found")
+        cf = CourseFormPayment(
+            student_id=student.id,
+            semester=semester,
+            amount=5000,
+            paid=True
+        )
+        db.add(cf)
+    else:
+        cf.paid = True
 
-    # ✅ manually mark as paid
-    cf.paid = True
     db.commit()
 
-    db.add(PaymentHistory(
-        student_id=student.id,
-        amount=cf.amount,
-        method="manual-courseform"
-    ))
-    db.commit()
-
-    return {
-        "message": f"Course form manually verified for {matric}"
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return {"message": "Course form manually verified successfully"}
