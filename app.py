@@ -2747,31 +2747,35 @@ def admin_student_attendance(
         Attendance.semester == semester
     ).all()
 
+    TOTAL_WEEKS = 12
+    
     attendance_data = {}
-
+    
     for r in records:
         if r.course_code not in attendance_data:
             attendance_data[r.course_code] = {
+                "weeks": {str(w): "absent" for w in range(1, TOTAL_WEEKS + 1)},
                 "first_attended_at": None,
-                "present": 0,
-                "absent": 0
+                "last_attended_at": None
             }
-
+    
+        attendance_data[r.course_code]["weeks"][str(r.week)] = r.status
+    
         if r.status == "present":
-            attendance_data[r.course_code]["present"] += 1
-
+    
+            # FIRST ATTENDANCE
             if not attendance_data[r.course_code]["first_attended_at"]:
                 attendance_data[r.course_code]["first_attended_at"] = r.attended_at.strftime("%Y-%m-%d %H:%M")
-
-        if r.status == "absent":
-            attendance_data[r.course_code]["absent"] += 1
-
-    return {
-        "student": student.full_name,
-        "matric_no": student.matric_no,
-        "semester": semester,
-        "courses": attendance_data
-    }
+    
+            # LAST ATTENDANCE
+            attendance_data[r.course_code]["last_attended_at"] = r.attended_at.strftime("%Y-%m-%d %H:%M")
+    
+        return {
+            "student": student.full_name,
+            "matric_no": student.matric_no,
+            "semester": semester,
+            "courses": attendance_data
+        }
     
 @app.get("/admin/course-attendance")
 def admin_course_attendance(
@@ -3676,6 +3680,7 @@ def add_note(
     ))
     db.commit()
     return {"message": "Note added"}
+
 
 
 
