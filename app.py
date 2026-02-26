@@ -2741,41 +2741,67 @@ def admin_student_attendance(
         raise HTTPException(404, "Student not found")
 
     semester = get_current_semester(db)
+    level = int(student.level)
+    TOTAL_WEEKS = 12
 
+    # ===== GET ASSIGNED COURSES FROM REGISTRY =====
+    raw_course = student.course.strip()
+    course_name = COURSE_ALIASES.get(raw_course, raw_course)
+
+    course_key = next(
+        (k for k in COURSE_REGISTRY if k.lower() == course_name.lower()),
+        None
+    )
+
+    if not course_key:
+        raise HTTPException(403, "Invalid course")
+
+    assigned_courses = COURSE_REGISTRY[course_key].get(level, {}).get(semester, [])
+
+    # ===== GET ATTENDANCE RECORDS =====
     records = db.query(Attendance).filter(
         Attendance.student_id == student.id,
         Attendance.semester == semester
     ).all()
 
-    TOTAL_WEEKS = 12
-    
-    attendance_data = {}
-    
+    attendance_lookup = {}
     for r in records:
-        if r.course_code not in attendance_data:
-            attendance_data[r.course_code] = {
-                "weeks": {str(w): "absent" for w in range(1, TOTAL_WEEKS + 1)},
-                "first_attended_at": None,
-                "last_attended_at": None
-            }
-    
-        attendance_data[r.course_code]["weeks"][str(r.week)] = r.status
-    
-        if r.status == "present":
-    
-            # FIRST ATTENDANCE
-            if not attendance_data[r.course_code]["first_attended_at"]:
-                attendance_data[r.course_code]["first_attended_at"] = r.attended_at.strftime("%Y-%m-%d %H:%M")
-    
-            # LAST ATTENDANCE
-            attendance_data[r.course_code]["last_attended_at"] = r.attended_at.strftime("%Y-%m-%d %H:%M")
-    
-        return {
-            "student": student.full_name,
-            "matric_no": student.matric_no,
-            "semester": semester,
-            "courses": attendance_data
+        attendance_lookup[(r.course_code, r.week)] = r
+
+    attendance_data = {}
+
+    # ===== BUILD FULL TABLE FOR ALL COURSES =====
+    for c in assigned_courses:
+        code = c["code"]
+
+        attendance_data[code] = {
+            "weeks": {},
+            "first_attended_at": None,
+            "last_attended_at": None
         }
+
+        for week in range(1, TOTAL_WEEKS + 1):
+            record = attendance_lookup.get((code, week))
+
+            if record:
+                attendance_data[code]["weeks"][str(week)] = record.status
+
+                if record.status == "present":
+
+                    if not attendance_data[code]["first_attended_at"]:
+                        attendance_data[code]["first_attended_at"] = record.attended_at.strftime("%Y-%m-%d %H:%M")
+
+                    attendance_data[code]["last_attended_at"] = record.attended_at.strftime("%Y-%m-%d %H:%M")
+
+            else:
+                attendance_data[code]["weeks"][str(week)] = "absent"
+
+    return {
+        "student": student.full_name,
+        "matric_no": student.matric_no,
+        "semester": semester,
+        "courses": attendance_data
+    }
     
 @app.get("/admin/course-attendance")
 def admin_course_attendance(
@@ -3680,6 +3706,7 @@ def add_note(
     ))
     db.commit()
     return {"message": "Note added"}
+
 
 
 
