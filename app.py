@@ -3707,7 +3707,45 @@ def add_note(
     db.commit()
     return {"message": "Note added"}
 
+@app.post("/admin/verify-courseform")
+def admin_verify_courseform(
+    matric: str = Form(...),
+    semester: str = Form(...),
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    matric = matric.strip().upper()
 
+    student = db.query(User).filter(
+        User.matric_no == matric,
+        User.role == "student"
+    ).first()
+
+    if not student:
+        raise HTTPException(404, "Student not found")
+
+    cf = db.query(CourseFormPayment).filter(
+        CourseFormPayment.student_id == student.id,
+        CourseFormPayment.semester == semester
+    ).first()
+
+    if not cf:
+        raise HTTPException(404, "Course form record not found")
+
+    # ✅ manually mark as paid
+    cf.paid = True
+    db.commit()
+
+    db.add(PaymentHistory(
+        student_id=student.id,
+        amount=cf.amount,
+        method="manual-courseform"
+    ))
+    db.commit()
+
+    return {
+        "message": f"Course form manually verified for {matric}"
+    }
 
 
 
