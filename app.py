@@ -48,6 +48,7 @@ from reportlab.platypus import (
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
+from datetime import timezone
 from datetime import datetime
 from models import Assignment, AssignmentSubmission, LecturerNote
 load_dotenv()
@@ -2534,7 +2535,7 @@ def get_classroom(
     if not already and content:
     
         release_time = content.created_at
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
     
         if release_time:
     
@@ -2617,16 +2618,16 @@ def get_classroom(
     # 🔵 FINAL RESPONSE
     # ======================================================
 
-    return {
-        "course": course_code,
-        "week": week,
-        "title": content.title if content else f"Week {week}",
-        "content": content.content if content else "No lesson yet",
-        "audio": content.audio if content else None,
-        "pdf": content.pdf if content else None,
-        "assignment": assignment_data,
-        "lecturer_notes": notes_data
-    }
+   return {
+    "course": course_code,
+    "week": week,
+    "title": content.title if content and content.title else f"Week {week}",
+    "content": content.content if content and content.content else "No lesson yet",
+    "audio": content.audio if content and content.audio and "." in content.audio else None,
+    "pdf": content.pdf if content and content.pdf and "." in content.pdf else None,
+    "assignment": assignment_data,
+    "lecturer_notes": notes_data
+}
 @app.get("/student/classroom/{course_code}/{week}/chat")
 def get_class_chat(
     course_code: str,
@@ -3763,4 +3764,5 @@ def admin_verify_courseform(
     db.commit()
 
     return {"message": "Course form manually verified successfully"}
+
 
