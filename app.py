@@ -2473,6 +2473,8 @@ def fix_access(admin=Depends(require_admin), db: Session = Depends(get_db)):
     return {"message": "Access recalculated for all students"}
 
 
+from datetime import datetime, timedelta, timezone
+
 @app.get("/student/classroom/{course_code}/{week}")
 def get_classroom(
     course_code: str,
@@ -2531,36 +2533,33 @@ def get_classroom(
         session=session
     ).first()
 
-# ---------------- AUTO ATTENDANCE ----------------
     if not already and content:
-    
+
         release_time = content.created_at
         now = datetime.now(timezone.utc)
-    
+
         if release_time:
-    
+
+            # Ensure release_time is timezone-aware
+            if release_time.tzinfo is None:
+                release_time = release_time.replace(tzinfo=timezone.utc)
+
             if now <= release_time + timedelta(hours=24):
-                # PRESENT
-                db.add(Attendance(
-                    student_id=student.id,
-                    course_code=course_code,
-                    week=week,
-                    semester=semester,
-                    session=session,
-                    status="present"
-                ))
+                status = "present"
             else:
-                # ABSENT (0 mark)
-                db.add(Attendance(
-                    student_id=student.id,
-                    course_code=course_code,
-                    week=week,
-                    semester=semester,
-                    session=session,
-                    status="absent"
-                ))
-    
+                status = "absent"
+
+            db.add(Attendance(
+                student_id=student.id,
+                course_code=course_code,
+                week=week,
+                semester=semester,
+                session=session,
+                status=status
+            ))
+
             db.commit()
+
     # ======================================================
     # 🔵 RECALCULATE CA (ASSIGNMENT 20 + ATTENDANCE 20)
     # ======================================================
@@ -2594,6 +2593,7 @@ def get_classroom(
         assignment_data = {
             "instructions": assignment.instructions,
             "due_date": assignment.due_date.strftime("%Y-%m-%d %H:%M")
+            if assignment.due_date else None
         }
 
     # ======================================================
@@ -2610,6 +2610,7 @@ def get_classroom(
             "note": n.note,
             "created_by": n.created_by,
             "time": n.created_at.strftime("%Y-%m-%d %H:%M")
+            if n.created_at else None
         }
         for n in notes
     ]
@@ -2618,16 +2619,16 @@ def get_classroom(
     # 🔵 FINAL RESPONSE
     # ======================================================
 
-   return {
-    "course": course_code,
-    "week": week,
-    "title": content.title if content and content.title else f"Week {week}",
-    "content": content.content if content and content.content else "No lesson yet",
-    "audio": content.audio if content and content.audio and "." in content.audio else None,
-    "pdf": content.pdf if content and content.pdf and "." in content.pdf else None,
-    "assignment": assignment_data,
-    "lecturer_notes": notes_data
-}
+    return {
+        "course": course_code,
+        "week": week,
+        "title": content.title if content and content.title else f"Week {week}",
+        "content": content.content if content and content.content else "No lesson yet",
+        "audio": content.audio if content and content.audio and "." in content.audio else None,
+        "pdf": content.pdf if content and content.pdf and "." in content.pdf else None,
+        "assignment": assignment_data,
+        "lecturer_notes": notes_data
+    }
 @app.get("/student/classroom/{course_code}/{week}/chat")
 def get_class_chat(
     course_code: str,
@@ -3764,5 +3765,6 @@ def admin_verify_courseform(
     db.commit()
 
     return {"message": "Course form manually verified successfully"}
+
 
 
