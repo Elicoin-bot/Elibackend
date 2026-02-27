@@ -7,21 +7,6 @@ from fastapi import (
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
-
-origins = [
-    "https://elinstitute.site",
-    "https://www.elinstitute.site"
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 from fastapi.staticfiles import StaticFiles
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -2623,8 +2608,8 @@ def get_classroom(
     # ======================================================
     # 🔵 FINAL RESPONSE
     # ======================================================
-    pdf_url = None
-    audio_url = None
+    pdf_url = content.pdf if content and content.pdf else None
+    audio_url = content.audio if content and content.audio else None
     
     if content:
         try:
@@ -3785,6 +3770,7 @@ def admin_verify_courseform(
     db.commit()
 
     return {"message": "Course form manually verified successfully"}
+
 
 
 
