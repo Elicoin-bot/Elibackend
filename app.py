@@ -2638,8 +2638,16 @@ def get_classroom(
         "week": week,
         "title": content.title if content and content.title else f"Week {week}",
         "content": content.content if content and content.content else "No lesson yet",
-        "audio": audio_path,
-        "pdf": pdf_path,
+        "audio": (
+                    f"https://api.elinstitute.site/{content.audio}"
+                    if content and content.audio and "." in content.audio
+                    else None
+                ),
+        "pdf": (
+                f"https://api.elinstitute.site/{content.pdf}"
+                if content and content.pdf and "." in content.pdf
+                else None
+            ),
         "assignment": assignment_data,
         "lecturer_notes": notes_data
     }
@@ -3779,6 +3787,7 @@ def admin_verify_courseform(
     db.commit()
 
     return {"message": "Course form manually verified successfully"}
+
 
 
 
