@@ -54,6 +54,24 @@ load_dotenv()
 
 
 import os
+from uuid import uuid4
+
+def save_file(file):
+    if not file or not file.filename:
+        return None
+
+    ext = os.path.splitext(file.filename)[1]
+
+    if not ext:
+        return None   # reject files without extension
+
+    filename = f"{uuid4()}{ext}"
+    filepath = os.path.join("uploads", filename)
+
+    with open(filepath, "wb") as buffer:
+        buffer.write(file.file.read())
+
+    return f"uploads/{filename}"
 from openai import OpenAI
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -3745,3 +3763,4 @@ def admin_verify_courseform(
     db.commit()
 
     return {"message": "Course form manually verified successfully"}
+
