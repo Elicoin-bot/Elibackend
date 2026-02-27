@@ -2623,14 +2623,23 @@ def get_classroom(
     # ======================================================
     # 🔵 FINAL RESPONSE
     # ======================================================
-
+    pdf_path = None
+    audio_path = None
+    
+    if content:
+        if content.pdf and content.pdf.strip():
+            pdf_path = content.pdf.strip()
+    
+        if content.audio and content.audio.strip():
+            audio_path = content.audio.strip()
+    
     return {
         "course": course_code,
         "week": week,
         "title": content.title if content and content.title else f"Week {week}",
         "content": content.content if content and content.content else "No lesson yet",
-        "audio": content.audio if content and content.audio and "." in content.audio else None,
-        "pdf": content.pdf if content and content.pdf and "." in content.pdf else None,
+        "audio": audio_path,
+        "pdf": pdf_path,
         "assignment": assignment_data,
         "lecturer_notes": notes_data
     }
@@ -3770,6 +3779,7 @@ def admin_verify_courseform(
     db.commit()
 
     return {"message": "Course form manually verified successfully"}
+
 
 
 
