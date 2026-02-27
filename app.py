@@ -2533,32 +2533,37 @@ def get_classroom(
         session=session
     ).first()
 
+# ---------------- AUTO ATTENDANCE (SAFE VERSION) ----------------
     if not already and content:
-
-        release_time = content.created_at
-        now = datetime.now(timezone.utc)
-
-        if release_time:
-
-            # Ensure release_time is timezone-aware
-            if release_time.tzinfo is None:
-                release_time = release_time.replace(tzinfo=timezone.utc)
-
-            if now <= release_time + timedelta(hours=24):
-                status = "present"
+    
+        try:
+            release_time = getattr(content, "created_at", None)
+            now = datetime.utcnow()
+    
+            # If no created_at exists, just skip attendance logic
+            if not release_time:
+                pass
+    
             else:
-                status = "absent"
-
-            db.add(Attendance(
-                student_id=student.id,
-                course_code=course_code,
-                week=week,
-                semester=semester,
-                session=session,
-                status=status
-            ))
-
-            db.commit()
+                if now <= release_time + timedelta(hours=24):
+                    status = "present"
+                else:
+                    status = "absent"
+    
+                db.add(Attendance(
+                    student_id=student.id,
+                    course_code=course_code,
+                    week=week,
+                    semester=semester,
+                    session=session,
+                    status=status
+                ))
+                db.commit()
+    
+        except Exception as e:
+            print("Attendance error:", e)
+            # DO NOT crash classroom
+            pass
 
     # ======================================================
     # 🔵 RECALCULATE CA (ASSIGNMENT 20 + ATTENDANCE 20)
