@@ -2518,18 +2518,20 @@ def get_classroom(
         session=session
     ).first()
 
-# ---------------- AUTO ATTENDANCE (SAFE VERSION) ----------------
+# ---------------- AUTO ATTENDANCE (FIXED VERSION) ----------------
     if not already and content:
     
-        try:
-            release_time = getattr(content, "created_at", None)
+        release_time = getattr(content, "created_at", None)
+    
+        if release_time:
+    
+            # Ensure both are UTC naive
+            if release_time.tzinfo:
+                release_time = release_time.replace(tzinfo=None)
+    
             now = datetime.utcnow()
     
-            # If no created_at exists, just skip attendance logic
-            if not release_time:
-                pass
-    
-            else:
+            try:
                 if now <= release_time + timedelta(hours=24):
                     status = "present"
                 else:
@@ -2541,15 +2543,14 @@ def get_classroom(
                     week=week,
                     semester=semester,
                     session=session,
-                    status=status
+                    status=status,
+                    attended_at=now  # 🔥 VERY IMPORTANT
                 ))
+    
                 db.commit()
     
-        except Exception as e:
-            print("Attendance error:", e)
-            # DO NOT crash classroom
-            pass
-
+            except Exception as e:
+                print("Attendance logic error:", e)
     # ======================================================
     # 🔵 RECALCULATE CA (ASSIGNMENT 20 + ATTENDANCE 20)
     # ======================================================
@@ -3771,8 +3772,51 @@ from reportlab.lib import utils
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import inch
 import os
+def get_attendance_data(student, semester, db):
+    TOTAL_WEEKS = TOTAL_SEMESTER_WEEKS
+    level = int(student.level)
 
-@app.get("/admin/student-attendance-pdf/{matric}")
+    raw_course = student.course.strip()
+    course_name = COURSE_ALIASES.get(raw_course, raw_course)
+
+    course_key = next(
+        (k for k in COURSE_REGISTRY if k.lower() == course_name.lower()),
+        None
+    )
+
+    if not course_key:
+        return {}
+
+    assigned_courses = COURSE_REGISTRY[course_key].get(level, {}).get(semester, [])
+
+    attendance_data = {}
+
+    for c in assigned_courses:
+        code = c["code"].upper()
+        attendance_data[code] = {}
+
+        for week in range(1, TOTAL_WEEKS + 1):
+
+            record = db.query(Attendance).filter(
+                Attendance.student_id == student.id,
+                Attendance.course_code == code,
+                Attendance.week == week,
+                Attendance.semester == semester
+            ).order_by(Attendance.attended_at.asc()).first()
+
+            if record and record.status == "present":
+                attendance_data[code][week] = {
+                    "status": "present",
+                    "first_attended_at": record.attended_at.strftime("%Y-%m-%d %H:%M")
+                }
+            else:
+                attendance_data[code][week] = {
+                    "status": "absent",
+                    "first_attended_at": None
+                }
+
+    return attendance_data
+@app.get("/admin/student-attendance-pdf/{matric:path}")
 def export_student_attendance_pdf(
     matric: str,
     admin=Depends(require_admin),
@@ -3852,6 +3896,7 @@ def export_student_attendance_pdf(
         media_type="application/pdf",
         filename=f"{student.matric_no}_attendance_report.pdf"
     )
+
 
 
 
