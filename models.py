@@ -94,7 +94,23 @@ class CourseContent(Base):
     pdf = Column(String, nullable=True)
     audio = Column(String, nullable=True)
 
+class CourseContent(Base):
+    __tablename__ = "course_content"
 
+    id = Column(Integer, primary_key=True)
+    course_code = Column(String, index=True)
+    faculty = Column(String, index=True)
+    level = Column(Integer, index=True)
+    semester = Column(String, index=True)
+
+    week = Column(Integer)
+    title = Column(String)
+    content = Column(Text)
+    pdf = Column(String, nullable=True)
+    audio = Column(String, nullable=True)
+
+    # 🔥 ADD THIS
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
 class CourseFormPayment(Base):
@@ -269,5 +285,6 @@ class LecturerNote(Base):
 
     created_by = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
+
 
 
