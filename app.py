@@ -2767,9 +2767,9 @@ def admin_student_attendance(
 
     semester = get_current_semester(db)
     level = int(student.level)
-    TOTAL_WEEKS = 12
+    TOTAL_WEEKS = TOTAL_SEMESTER_WEEKS
 
-    # ===== GET ASSIGNED COURSES FROM REGISTRY =====
+    # ===== GET ASSIGNED COURSES =====
     raw_course = student.course.strip()
     course_name = COURSE_ALIASES.get(raw_course, raw_course)
 
@@ -2783,49 +2783,39 @@ def admin_student_attendance(
 
     assigned_courses = COURSE_REGISTRY[course_key].get(level, {}).get(semester, [])
 
-    # ===== GET ATTENDANCE RECORDS =====
-    records = db.query(Attendance).filter(
-        Attendance.student_id == student.id,
-        Attendance.semester == semester
-    ).all()
-
-    attendance_lookup = {}
-    for r in records:
-        attendance_lookup[(r.course_code, r.week)] = r
-
     attendance_data = {}
 
-    # ===== BUILD FULL TABLE FOR ALL COURSES =====
     for c in assigned_courses:
-        code = c["code"]
+        code = c["code"].upper()
 
-        attendance_data[code] = {
-            "weeks": {},
-            "first_attended_at": None,
-            "last_attended_at": None
-        }
+        attendance_data[code] = {}
 
         for week in range(1, TOTAL_WEEKS + 1):
-            record = attendance_lookup.get((code, week))
 
-            if record:
-                attendance_data[code]["weeks"][str(week)] = record.status
+            # Get FIRST attendance record for that week
+            record = db.query(Attendance).filter(
+                Attendance.student_id == student.id,
+                Attendance.course_code == code,
+                Attendance.week == week,
+                Attendance.semester == semester
+            ).order_by(Attendance.attended_at.asc()).first()
 
-                if record.status == "present":
-
-                    if not attendance_data[code]["first_attended_at"]:
-                        attendance_data[code]["first_attended_at"] = record.attended_at.strftime("%Y-%m-%d %H:%M")
-
-                    attendance_data[code]["last_attended_at"] = record.attended_at.strftime("%Y-%m-%d %H:%M")
-
+            if record and record.status == "present":
+                attendance_data[code][str(week)] = {
+                    "status": "present",
+                    "first_attended_at": record.attended_at.strftime("%Y-%m-%d %H:%M")
+                }
             else:
-                attendance_data[code]["weeks"][str(week)] = "absent"
+                attendance_data[code][str(week)] = {
+                    "status": "absent",
+                    "first_attended_at": None
+                }
 
     return {
         "student": student.full_name,
         "matric_no": student.matric_no,
         "semester": semester,
-        "courses": attendance_data
+        "attendance": attendance_data
     }
     
 @app.get("/admin/course-attendance")
@@ -3770,6 +3760,7 @@ def admin_verify_courseform(
     db.commit()
 
     return {"message": "Course form manually verified successfully"}
+
 
 
 
