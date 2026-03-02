@@ -3763,6 +3763,95 @@ def admin_verify_courseform(
 
 
 
+from fastapi.responses import FileResponse
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import utils
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import inch
+import os
+
+@app.get("/admin/student-attendance-pdf/{matric}")
+def export_student_attendance_pdf(
+    matric: str,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    matric = matric.strip().upper()
+
+    student = db.query(User).filter(
+        User.matric_no == matric,
+        User.role == "student"
+    ).first()
+
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    semester = get_current_semester(db)
+
+    attendance = get_attendance_data(student, semester, db)  
+    # 🔥 IMPORTANT:
+    # This must return the same structured data you send to frontend:
+    # {
+    #   "CSC101": {
+    #       1: {"status": "present", "first_attended_at": "..."},
+    #       2: {"status": "absent", "first_attended_at": None}
+    #   }
+    # }
+
+    file_path = f"/mnt/data/{student.matric_no}_attendance.pdf"
+
+    doc = SimpleDocTemplate(file_path, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    # ===== Title =====
+    elements.append(Paragraph(f"Attendance Report", styles["Heading1"]))
+    elements.append(Spacer(1, 0.2 * inch))
+
+    elements.append(Paragraph(f"Name: {student.full_name}", styles["Normal"]))
+    elements.append(Paragraph(f"Matric No: {student.matric_no}", styles["Normal"]))
+    elements.append(Paragraph(f"Semester: {semester}", styles["Normal"]))
+    elements.append(Spacer(1, 0.3 * inch))
+
+    # ===== Table Data =====
+    for course, weeks in attendance.items():
+
+        elements.append(Paragraph(f"Course: {course}", styles["Heading3"]))
+        elements.append(Spacer(1, 0.1 * inch))
+
+        table_data = [["Week", "Status", "First Attendance"]]
+
+        for week in range(1, 13):
+            week_data = weeks.get(week)
+
+            if week_data and week_data["status"] == "present":
+                status = "Present"
+                time = week_data["first_attended_at"]
+            else:
+                status = "Absent"
+                time = "-"
+
+            table_data.append([f"Week {week}", status, time])
+
+        table = Table(table_data, repeatRows=1)
+        table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('ALIGN', (1, 1), (-1, -1), 'CENTER')
+        ]))
+
+        elements.append(table)
+        elements.append(Spacer(1, 0.4 * inch))
+
+    doc.build(elements)
+
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        filename=f"{student.matric_no}_attendance_report.pdf"
+    )
 
 
 
