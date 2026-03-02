@@ -79,20 +79,7 @@ class SemesterLog(Base):
 
     from sqlalchemy import Column, Integer, String, Text
 
-class CourseContent(Base):
-    __tablename__ = "course_content"
 
-    id = Column(Integer, primary_key=True)
-    course_code = Column(String, index=True)
-    faculty = Column(String, index=True)   # ✅ NEW
-    level = Column(Integer, index=True)    # ✅ NEW
-    semester = Column(String, index=True)  # ✅ NEW
-
-    week = Column(Integer)
-    title = Column(String)
-    content = Column(Text)
-    pdf = Column(String, nullable=True)
-    audio = Column(String, nullable=True)
 
 class CourseContent(Base):
     __tablename__ = "course_content"
@@ -285,6 +272,7 @@ class LecturerNote(Base):
 
     created_by = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
+
 
 
 
