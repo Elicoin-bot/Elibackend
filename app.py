@@ -3114,7 +3114,7 @@ def flutterwave_init(
 
     # Flutterwave returns payment link
     return {"authorization_url": data["data"]["link"]}
-
+    
 @app.get("/student/flutterwave/verify")
 def verify_flutterwave_payment(
     transaction_id: str,
@@ -3233,6 +3233,15 @@ def admission_verify(
 
     if data["status"] != "success":
         raise HTTPException(400, "Verification failed")
+        # Prevent fraud / mismatch
+    if data["data"]["tx_ref"] != tx_ref:
+        raise HTTPException(400, "Transaction mismatch")
+    
+    if data["data"]["amount"] != 15000:
+        raise HTTPException(400, "Invalid amount")
+    
+    if data["data"]["currency"] != "NGN":
+        raise HTTPException(400, "Invalid currency")    
 
     meta = data["data"]["meta"]
 
@@ -3260,6 +3269,103 @@ def admission_verify(
         "tracking_code": tracking
     }
 
+@app.get("/admission/manual-verify")
+def manual_verify(email: str, db: Session = Depends(get_db)):
+
+    url = "https://api.flutterwave.com/v3/transactions"
+
+    r = requests.get(
+        url,
+        headers={"Authorization": f"Bearer {FLW_SECRET_KEY}"},
+        params={"customer_email": email}
+    )
+
+    data = r.json()
+
+    if data.get("status") != "success":
+        raise HTTPException(400, "Unable to fetch transactions")
+
+    for tx in data.get("data", []):
+
+        if (
+            tx["status"] == "successful" and
+            float(tx["amount"]) == 15000
+        ):
+
+            # prevent duplicate
+            existing = db.query(AdmissionApplication).filter_by(
+                payment_ref=tx["tx_ref"]
+            ).first()
+
+            if existing:
+                return {
+                    "message": "Already verified",
+                    "tracking_code": existing.tracking_code
+                }
+
+            meta = tx.get("meta", {})
+
+            year = datetime.now().year
+            count = db.query(AdmissionApplication).count() + 1
+            tracking = f"ADM-{year}-{count:06d}"
+
+            app = AdmissionApplication(
+                full_name=meta.get("full_name"),
+                email=meta.get("email"),
+                phone=meta.get("phone"),
+                payment_ref=tx["tx_ref"],
+                payment_amount=tx["amount"],
+                tracking_code=tracking,
+                status="PAID"
+            )
+
+            db.add(app)
+            db.commit()
+
+            return {
+                "message": "Payment verified",
+                "tracking_code": tracking
+            }
+
+    raise HTTPException(404, "No valid payment found")
+
+@app.post("/flutterwave/webhook")
+async def flutterwave_webhook(request: Request, db: Session = Depends(get_db)):
+    payload = await request.json()
+
+    if payload.get("event") == "charge.completed":
+        data = payload["data"]
+
+        if data["status"] == "successful":
+
+            existing = db.query(AdmissionApplication).filter_by(
+                payment_ref=data["tx_ref"]
+            ).first()
+
+            if existing:
+                return {"status": "already processed"}
+
+            meta = data.get("meta", {})
+
+            year = datetime.now().year
+            count = db.query(AdmissionApplication).count() + 1
+            tracking = f"ADM-{year}-{count:06d}"
+
+            app = AdmissionApplication(
+                full_name=meta.get("full_name"),
+                email=meta.get("email"),
+                phone=meta.get("phone"),
+                payment_ref=data["tx_ref"],
+                payment_amount=data["amount"],
+                tracking_code=tracking,
+                status="PAID"
+            )
+
+            db.add(app)
+            db.commit()
+
+    return {"status": "ok"}
+    
 @app.post("/admission/submit")
 def admission_submit(
     tracking_code: str = Form(...),
