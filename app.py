@@ -4003,7 +4003,45 @@ def export_student_attendance_pdf(
     )
 
 
+@app.post("/admin/admission/manual-create")
+def admin_create_admission(
+    full_name: str = Form(...),
+    email: str = Form(...),
+    phone: str = Form(...),
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db)
+):
 
+    # ✅ prevent duplicate (very important)
+    existing = db.query(AdmissionApplication).filter_by(email=email).first()
+    if existing:
+        return {
+            "message": "Applicant already exists",
+            "tracking_code": existing.tracking_code
+        }
+
+    # ✅ generate tracking
+    year = datetime.now().year
+    count = db.query(AdmissionApplication).count() + 1
+    tracking = f"ADM-{year}-{count:06d}"
+
+    app = AdmissionApplication(
+        full_name=full_name,
+        email=email,
+        phone=phone,
+        payment_ref="ADMIN-MANUAL",
+        payment_amount=0,
+        tracking_code=tracking,
+        status="PAID"  # or "SCREENING" if you prefer
+    )
+
+    db.add(app)
+    db.commit()
+
+    return {
+        "message": "Admission created manually",
+        "tracking_code": tracking
+    }
 
 
 
