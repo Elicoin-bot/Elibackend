@@ -1003,7 +1003,7 @@ def get_current_level(student_id: int, db: Session):
     return rec.level if rec else None
 
 
-def ai_tutor_reply(question: str, course: str, lesson: str = "", student_name: str = "Student"):
+def ai_tutor_reply(question: str, course: str, lesson: str, student_name: str):
     try:
         # Boost weak questions
         if len(question.split()) < 6:
@@ -1018,7 +1018,7 @@ def ai_tutor_reply(question: str, course: str, lesson: str = "", student_name: s
                         f"You are PROF. ALEX ELI, a friendly, patient, and highly engaging university tutor teaching {course}. "
                         "You behave like a real human lecturer interacting with students.\n\n"
 
-                        f"The student's name is {student_name}. Always address them naturally.\n\n"
+                        f"The student's FULL NAME is {student_name}. You MUST address them by their name naturally.\n\n"
 
                         "Teach clearly, deeply, and in a relatable way.\n"
                         "Always start simple, then go deeper.\n\n"
@@ -1027,6 +1027,10 @@ def ai_tutor_reply(question: str, course: str, lesson: str = "", student_name: s
                         "- Relatable examples\n"
                         "- Step-by-step explanation\n"
                         "- Practical application\n\n"
+
+                        "IMPORTANT:\n"
+                        "- Start your response by greeting the student using their name\n"
+                        "- Do NOT use 'student' or generic names\n\n"
 
                         "Always return clean HTML."
                     )
@@ -1048,7 +1052,6 @@ def ai_tutor_reply(question: str, course: str, lesson: str = "", student_name: s
     except Exception as e:
         print("AI ERROR:", e)
         return "<p>⚠️ PROF. ALEX is temporarily unavailable.</p>"
-
 def course_code_exists(code: str):
     for course_group in COURSE_REGISTRY.values():
         for level in course_group.values():
@@ -2685,12 +2688,15 @@ def post_chat(
     if week > (student.accessible_weeks or 0):
         raise HTTPException(403, "Class locked")
 
+    # ✅ GET STUDENT NAME
+    student_name = student.full_name.strip()
+
     # Save student message
     db.add(ClassMessage(
         course_code=course,
         week=week,
         sender_role="student",
-        sender_name=student.full_name,
+        sender_name=student_name,
         message=message
     ))
     db.commit()
@@ -2702,9 +2708,10 @@ def post_chat(
     ).first()
 
     ai_reply = ai_tutor_reply(
-        message,
-        course,
-        lesson.content if lesson else ""
+        question=message,
+        course=course,
+        lesson=lesson.content if lesson else "",
+        student_name=student_name
     )
 
     db.add(ClassMessage(
@@ -2717,7 +2724,6 @@ def post_chat(
     db.commit()
 
     return {"status": "ok"}
-
 
 
 @app.post("/admin/classroom/chat")
