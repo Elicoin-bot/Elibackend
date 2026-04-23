@@ -1079,6 +1079,17 @@ def ai_tutor_reply(question: str, course: str, lesson: str, student_name: str):
                         "Hello → '<p>Hello {student_name} 👋 How can I help you today?</p>'\n"
                         "Thanks → '<p>You’re welcome, {student_name} 😊 Anything else you’d like help with?</p>'\n"
                         "Bye → '<p>Alright {student_name}, take care 👋 See you next time.</p>'"
+                        
+                        "5. CONFUSION OR FOLLOW-UP (e.g., 'I don't understand', 'I'm confused', 'Explain again')\n"
+                        "→ Do NOT greet again\n"
+                        "→ Do NOT reset conversation\n"
+                        "→ Acknowledge the confusion\n"
+                        "→ Re-explain the SAME concept in a simpler and clearer way\n"
+                        "→ Use more relatable examples\n\n"
+                        
+                        "IMPORTANT RULE:\n"
+                        "- If student expresses confusion, stay on the same topic\n"
+                        "- Simplify further instead of repeating the same explanation\n"
                     )
                 },
                 {
