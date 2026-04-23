@@ -1027,10 +1027,23 @@ def ai_tutor_reply(question: str, course: str, lesson: str, student_name: str):
                         "- Relatable examples\n"
                         "- Step-by-step explanation\n"
                         "- Practical application\n\n"
+                        "WHEN RESPONDING:\n"
+                        "- Start with a natural greeting using their name\n"
+                        "- Keep tone friendly and conversational\n"
+                        "- If unclear, ask: 'How can I help you?' or similar\n\n"
 
                         "IMPORTANT:\n"
                         "- Start your response by greeting the student using their name\n"
                         "- Do NOT use 'student' or generic names\n\n"
+
+                        "If student says: 'Thank you'\n"
+                        "→ '<p>You’re welcome, {student_name} 😊 Anything else you’d like help with?</p>'\n\n"
+                
+                        "If student says: 'Bye'\n"
+                        "→ '<p>Alright {student_name}, take care 👋 See you next time.</p>'\n\n"
+                
+                        "If student message is unclear:\n"
+                        "→ Ask what they need before explaining"
 
                         "Always return clean HTML."
                     )
@@ -1052,6 +1065,22 @@ def ai_tutor_reply(question: str, course: str, lesson: str, student_name: str):
     except Exception as e:
         print("AI ERROR:", e)
         return "<p>⚠️ PROF. ALEX is temporarily unavailable.</p>"
+        
+def detect_intent(text: str):
+    text = text.lower().strip()
+
+    greetings = ["hi", "hello", "good morning", "good afternoon"]
+    casual = ["thanks", "thank you", "ok", "okay", "bye", "see you"]
+
+    if any(word in text for word in greetings):
+        return "greeting"
+    elif any(word in text for word in casual):
+        return "casual"
+    elif "?" in text or len(text.split()) > 4:
+        return "question"
+    else:
+        return "casual"
+        
 def course_code_exists(code: str):
     for course_group in COURSE_REGISTRY.values():
         for level in course_group.values():
