@@ -2798,7 +2798,9 @@ def post_chat(
     # ✅ GET STUDENT NAME
     student_name = student.full_name.strip()
 
-    # Save student message
+    # =========================
+    # SAVE STUDENT MESSAGE
+    # =========================
     db.add(ClassMessage(
         course_code=course,
         week=week,
@@ -2808,23 +2810,85 @@ def post_chat(
     ))
     db.commit()
 
-    # ===== AI REPLY =====
-    # ===== AI REPLY (GET ALL WEEKS) =====
+    # =========================
+    # GET ALL LESSONS (ALL WEEKS)
+    # =========================
     all_lessons = db.query(CourseContent).filter(
         CourseContent.course_code == course
     ).order_by(CourseContent.week.asc()).all()
-    
+
     lesson_bundle = "\n\n".join([
         f"Week {l.week}:\n{l.content}" for l in all_lessons
     ])
 
-    ai_reply = ai_tutor_reply(
-        question=message,
-        course=course,
-        lesson=lesson_bundle,
-        student_name=student.full_name
+    # =========================
+    # 🔥 GET CHAT HISTORY (VERY IMPORTANT)
+    # =========================
+    history = db.query(ClassMessage).filter(
+        ClassMessage.course_code == course,
+        ClassMessage.week == week
+    ).order_by(ClassMessage.id.asc()).limit(20).all()
+
+    # =========================
+    # 🔥 BUILD AI MESSAGES FLOW
+    # =========================
+    messages = []
+
+    # SYSTEM MESSAGE (PUT YOUR FULL PROMPT HERE)
+    system_prompt = f"""
+You are PROF. ALEX ELI, a highly intelligent and human-like university lecturer teaching {course}.
+
+The student's FULL NAME is {student_name}. Always address them naturally.
+
+You have access to ALL weekly lessons below:
+{lesson_bundle}
+
+RULES:
+- Maintain conversation flow (VERY IMPORTANT)
+- Do NOT reset conversation
+- If student says "go on", continue
+- If student says "I'm confused", simplify deeply
+- If unclear, ask a short question
+- Teach step-by-step, relatable, and clearly
+- Be human, not robotic
+
+FORMAT:
+- Return clean HTML (<p>, <h4>, <ul><li>)
+"""
+
+    messages.append({
+        "role": "system",
+        "content": system_prompt
+    })
+
+    # ADD HISTORY
+    for msg in history:
+        role = "assistant" if msg.sender_role == "ai" else "user"
+        messages.append({
+            "role": role,
+            "content": msg.message
+        })
+
+    # ADD CURRENT MESSAGE
+    messages.append({
+        "role": "user",
+        "content": message
+    })
+
+    # =========================
+    # 🔥 AI CALL WITH MEMORY
+    # =========================
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=messages,
+        temperature=0.4
     )
 
+    ai_reply = response.choices[0].message.content
+
+    # =========================
+    # SAVE AI RESPONSE
+    # =========================
     db.add(ClassMessage(
         course_code=course,
         week=week,
@@ -2835,7 +2899,6 @@ def post_chat(
     db.commit()
 
     return {"status": "ok"}
-
 
 @app.post("/admin/classroom/chat")
 def admin_send_message(
