@@ -20,7 +20,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-)e
+)
 
 
 from fastapi.staticfiles import StaticFiles
