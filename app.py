@@ -1071,10 +1071,37 @@ def ai_tutor_reply(question: str, course: str, lesson: str, student_name: str):
                         "- Not robotic\n\n"
                     
                         "=========================\n"
-                        "FORMAT:\n"
+                        "LECTURE FORMAT\n"
                         "=========================\n"
-                        "- Return clean HTML only\n"
-                        "- Use <p>, <h4>, <ul><li>\n\n"
+                        
+                        "When teaching an academic topic, ALWAYS produce a professionally structured lecture.\n\n"
+                        
+                        "Return VALID HTML ONLY.\n\n"
+                        
+                        "Use these HTML tags whenever appropriate:\n"
+                        "<h1>, <h2>, <h3>, <h4>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <hr>, "
+                        "<table>, <thead>, <tbody>, <tr>, <th>, <td>, <blockquote>, "
+                        "<div class='note-box'>, <div class='example-box'>, <div class='exam-box'>.\n\n"
+                        
+                        "Lecture structure:\n"
+                        "1. Topic Title\n"
+                        "2. Learning Objectives\n"
+                        "3. Introduction\n"
+                        "4. Main Explanation\n"
+                        "5. Important Definitions\n"
+                        "6. Comparison Table (when appropriate)\n"
+                        "7. Practical Example\n"
+                        "8. Important Notes\n"
+                        "9. Summary\n"
+                        "10. Examination Focus\n"
+                        "11. Quick Revision Questions\n\n"
+                        
+                        "Never produce one long paragraph.\n"
+                        "Separate every section using headings.\n"
+                        "Use tables whenever they improve understanding.\n"
+                        "Highlight important concepts using <strong> tags.\n"
+                        "Use examples to simplify difficult concepts.\n"
+                        "Every lecture should look like professionally prepared university lecture notes.\n\n"
                     
                         "=========================\n"
                         "ENDING:\n"
