@@ -2772,6 +2772,7 @@ def get_classroom(
     # ======================================================
     pdf_url = content.pdf if content and content.pdf else None
     audio_url = content.audio if content and content.audio else None
+    video_url = content.video if content and content.video else None
     
     if content:
         try:
@@ -2785,6 +2786,12 @@ def get_classroom(
                 audio_url = f"https://api.elinstitute.site/{content.audio.strip()}"
         except Exception as e:
             print("Audio error:", e)
+            
+        try:
+            if isinstance(content.video, str) and content.video.strip():
+                video_url = f"https://api.elinstitute.site/{content.video.strip()}"
+        except Exception as e:
+            print("Video error:", e)
     
     return {
         "course": course_code,
@@ -2793,6 +2800,7 @@ def get_classroom(
         "content": content.content if content and content.content else "No lesson yet",
         "audio": audio_url,
         "pdf": pdf_url,
+        "video": video_url,
         "assignment": assignment_data,
         "lecturer_notes": notes_data
     }
@@ -3126,12 +3134,21 @@ def upload_course_content(
     content: str = Form(""),
     pdf: UploadFile = File(None),
     audio: UploadFile = File(None),
+    video: UploadFile = File(None),
     db: Session = Depends(get_db),
     admin=Depends(require_admin),
 ):
     course_code = validate_course_code(course_code)
     pdf_path = None
     audio_path = None
+    video_path = None
+
+    if video:
+        video_name = f"{uuid.uuid4()}_{video.filename}"
+        video_path = f"uploads/{video_name}"
+    
+        with open(video_path, "wb") as f:
+            shutil.copyfileobj(video.file, f)
 
     if pdf:
         pdf_name = f"{uuid.uuid4()}_{pdf.filename}"
@@ -3154,9 +3171,10 @@ def upload_course_content(
         title=title,
         content=content,
         pdf=pdf_path,
-        audio=audio_path
+        audio=audio_path,
+        video=video_path
     )
-
+    
     db.add(class_item)
     db.commit()
 
