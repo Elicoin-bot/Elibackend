@@ -95,8 +95,8 @@ class CourseContent(Base):
     content = Column(Text)
     pdf = Column(String, nullable=True)
     audio = Column(String, nullable=True)
+    video = Column(String, nullable=True)
 
-    # 🔥 ADD THIS
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
