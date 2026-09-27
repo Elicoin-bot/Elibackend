@@ -2318,31 +2318,24 @@ def admin_mark_course_form_paid(
             detail=f"Student with matric number {matric_no} not found."
         )
 
-    # Current academic session
-    session = f"{datetime.now().year}/{datetime.now().year + 1}"
-
-    # Check existing course form payment
+    # Find existing payment for this student and semester
     payment = db.query(CourseFormPayment).filter(
         CourseFormPayment.student_id == student.id,
-        CourseFormPayment.semester == semester,
-        CourseFormPayment.session == session
+        CourseFormPayment.semester == semester
     ).first()
 
     if payment:
-        # Already exists — simply mark as paid
+        # Existing record — mark as paid
         payment.paid = True
         payment.amount = 5000
-
     else:
-        # Create manual verified payment
+        # Create new manually verified payment
         payment = CourseFormPayment(
             student_id=student.id,
             semester=semester,
-            session=session,
             amount=5000,
             paid=True
         )
-
         db.add(payment)
 
     db.commit()
@@ -2353,11 +2346,9 @@ def admin_mark_course_form_paid(
         "message": "Course form manually verified successfully.",
         "student": student.matric_no,
         "semester": semester,
-        "session": session,
         "amount": 5000,
         "paid": True
     }
-
 @app.get("/student/course-form/status")
 def course_form_status(
     student=Depends(require_student),
