@@ -2296,44 +2296,66 @@ def admin_mark_course_form_paid(
     admin=Depends(require_admin),
     db: Session = Depends(get_db)
 ):
-    semester = semester.lower()
-    if semester not in ["first", "second"]:
-        raise HTTPException(400, "Invalid semester")
+    matric_no = matric_no.strip().upper()
+    semester = semester.strip().lower()
 
+    # Validate semester
+    if semester not in ["first", "second"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid semester. Select first or second semester."
+        )
+
+    # Find student
     student = db.query(User).filter(
-        User.matric_no == matric_no.strip().upper(),
+        User.matric_no == matric_no,
         User.role == "student"
     ).first()
 
     if not student:
-        raise HTTPException(404, "Student not found")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Student with matric number {matric_no} not found."
+        )
 
+    # Current academic session
     session = f"{datetime.now().year}/{datetime.now().year + 1}"
 
-    payment = db.query(CourseFormPayment).filter_by(
-        student_id=student.id,
-        semester=semester,
-        session=session
+    # Check existing course form payment
+    payment = db.query(CourseFormPayment).filter(
+        CourseFormPayment.student_id == student.id,
+        CourseFormPayment.semester == semester,
+        CourseFormPayment.session == session
     ).first()
 
-    if not payment:
+    if payment:
+        # Already exists — simply mark as paid
+        payment.paid = True
+        payment.amount = 5000
+
+    else:
+        # Create manual verified payment
         payment = CourseFormPayment(
             student_id=student.id,
             semester=semester,
             session=session,
-            paid=1
+            amount=5000,
+            paid=True
         )
+
         db.add(payment)
-    else:
-        payment.paid = 1
 
     db.commit()
+    db.refresh(payment)
 
     return {
-        "message": f"Course form marked as PAID for {semester.upper()} semester",
+        "success": True,
+        "message": "Course form manually verified successfully.",
         "student": student.matric_no,
         "semester": semester,
-        "session": session
+        "session": session,
+        "amount": 5000,
+        "paid": True
     }
 
 @app.get("/student/course-form/status")
