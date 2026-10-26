@@ -3143,7 +3143,7 @@ def upload_course_content(
     audio_path = None
     video_path = None
 
-    if video:
+    if video and video.filename and video.filename.strip():
         video_name = f"{uuid.uuid4()}_{video.filename}"
         video_path = f"uploads/{video_name}"
     
