@@ -14,10 +14,11 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from models import Result
+from models import EnglishPathwayScreening
 from jose import jwt
 from passlib.context import CryptContext
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from models import Base, User
@@ -1794,6 +1795,158 @@ def student_results_pdf(
     )
 
 
+
+# ======================================================
+# ENGLISH PATHWAY SCREENING
+# ======================================================
+
+
+# ================= ADMIN: UPLOAD SCREENING RESULT =================
+
+@app.post("/admin/english-pathway-screening")
+def upload_english_pathway_screening(
+    matric_no: str = Form(...),
+    score: int = Form(...),
+    screening_date: date = Form(...),
+    grade: str = Form(None),
+
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+
+    # Validate score
+    if score < 0 or score > 100:
+        raise HTTPException(
+            status_code=400,
+            detail="Screening score must be between 0 and 100."
+        )
+
+    # Find student
+    matric_no = matric_no.strip().upper()
+
+    student = db.query(User).filter(
+        User.matric_no == matric_no,
+        User.role == "student"
+    ).first()
+
+    if not student:
+        raise HTTPException(
+            status_code=404,
+            detail="Student not found."
+        )
+
+    # Use ELI's existing grading function
+    calculated_grade, remark = grade_score(score)
+
+    # Validate any grade submitted by the admin interface
+    if grade and grade.strip().upper() != calculated_grade:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Incorrect grade for this score. The correct grade is {calculated_grade}."
+        )
+
+    # B or above = Pass; below B = Fail
+    status = (
+        "Pass"
+        if calculated_grade in ["A", "B"]
+        else "Fail"
+    )
+
+    result = EnglishPathwayScreening(
+        student_id=student.id,
+        score=score,
+        grade=calculated_grade,
+        status=status,
+        screening_date=screening_date
+    )
+
+    db.add(result)
+    db.commit()
+    db.refresh(result)
+
+    return {
+        "message": "English Pathway Screening result uploaded successfully.",
+        "student": student.full_name,
+        "matric_no": student.matric_no,
+        "score": result.score,
+        "grade": result.grade,
+        "status": result.status,
+        "screening_date": result.screening_date.isoformat()
+    }
+
+
+# ================= ADMIN: VIEW STUDENT SCREENING RESULTS =================
+
+@app.get("/admin/english-pathway-screening")
+def admin_view_english_pathway_screening(
+    matric_no: str,
+    admin=Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+
+    matric_no = matric_no.strip().upper()
+
+    student = db.query(User).filter(
+        User.matric_no == matric_no,
+        User.role == "student"
+    ).first()
+
+    if not student:
+        raise HTTPException(
+            status_code=404,
+            detail="Student not found."
+        )
+
+    results = db.query(EnglishPathwayScreening).filter(
+        EnglishPathwayScreening.student_id == student.id
+    ).order_by(
+        EnglishPathwayScreening.screening_date.desc(),
+        EnglishPathwayScreening.created_at.desc()
+    ).all()
+
+    return {
+        "student": student.full_name,
+        "matric_no": student.matric_no,
+        "results": [
+            {
+                "id": r.id,
+                "matric_no": student.matric_no,
+                "score": r.score,
+                "grade": r.grade,
+                "status": r.status,
+                "screening_date": r.screening_date.isoformat()
+            }
+            for r in results
+        ]
+    }
+
+
+# ================= STUDENT: VIEW OWN SCREENING RESULTS =================
+
+@app.get("/student/english-pathway-screening")
+def student_view_english_pathway_screening(
+    student=Depends(require_student),
+    db: Session = Depends(get_db)
+):
+
+    results = db.query(EnglishPathwayScreening).filter(
+        EnglishPathwayScreening.student_id == student.id
+    ).order_by(
+        EnglishPathwayScreening.screening_date.desc(),
+        EnglishPathwayScreening.created_at.desc()
+    ).all()
+
+    return {
+        "results": [
+            {
+                "score": r.score,
+                "grade": r.grade,
+                "status": r.status,
+                "screening_date": r.screening_date.isoformat()
+            }
+            for r in results
+        ]
+    }
 
 
 
