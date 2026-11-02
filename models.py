@@ -1,4 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Boolean
+from sqlalchemy import (
+    Column, Integer, String, ForeignKey,
+    DateTime, Text, Boolean, Date
+)
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -143,6 +146,38 @@ class Attendance(Base):
     session = Column(String)
     status = Column(String, default="present")  # NEW
     attended_at = Column(DateTime, default=datetime.utcnow)
+
+# ==========================================
+# ENGLISH PATHWAY SCREENING RESULTS
+# ==========================================
+
+class EnglishPathwayScreening(Base):
+    __tablename__ = "english_pathway_screenings"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    student_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False,
+        index=True
+    )
+
+    score = Column(Integer, nullable=False)
+    grade = Column(String(2), nullable=False)
+    status = Column(String(20), nullable=False)
+
+    screening_date = Column(Date, nullable=False)
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+    student = relationship(
+        "User",
+        backref="english_pathway_screenings"
+    )
 
 
 class ClassReplay(Base):
